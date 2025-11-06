@@ -1,0 +1,4 @@
+# This is a simplified go.sum file for demonstration
+# In production, run `go mod tidy` to generate the complete checksum database
+github.com/go-chi/chi/v5 v5.0.10 h1:placeholder
+github.com/go-chi/chi/v5 v5.0.10/go.mod h1:placeholder

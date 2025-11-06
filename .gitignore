@@ -1,0 +1,41 @@
+# Environment files
+.env
+.env.local
+.env.production
+
+# Docker volumes
+/postgres-data
+/redis-data
+/uploads
+
+# Rails
+rails-app/log/*
+rails-app/tmp/*
+rails-app/.bundle
+rails-app/vendor/bundle
+rails-app/public/assets
+rails-app/public/uploads
+rails-app/storage
+rails-app/.byebug_history
+rails-app/config/master.key
+rails-app/config/credentials/*.key
+
+# Go
+go-backend/tmp
+go-backend/*.log
+go-backend/go-backend
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
