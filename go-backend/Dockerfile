@@ -6,17 +6,11 @@ RUN apk add --no-cache git gcc musl-dev
 # Set working directory
 WORKDIR /build
 
-# Copy go mod files
-COPY go.mod ./
-
-# Initialize go.sum if it doesn't exist or is invalid
-RUN go mod download || true
-RUN go mod tidy
-
-# Copy source code
+# Copy source code first (needed for go mod tidy to work)
 COPY . .
 
-# Ensure all dependencies are downloaded and verified
+# Generate go.sum and download dependencies
+RUN go mod tidy
 RUN go mod download
 RUN go mod verify
 
