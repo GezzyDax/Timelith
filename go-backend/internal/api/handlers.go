@@ -31,7 +31,7 @@ func (s *Server) respondError(w http.ResponseWriter, status int, message string)
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	s.respondJSON(w, http.StatusOK, map[string]string{
-		"status": "ok",
+		"status":  "ok",
 		"service": "timelith-backend",
 	})
 }

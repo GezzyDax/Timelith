@@ -12,11 +12,11 @@ import (
 )
 
 type Manager struct {
-	config   *config.Config
-	db       *gorm.DB
-	log      *logger.Logger
-	clients  map[uint]*TelegramClient
-	mu       sync.RWMutex
+	config  *config.Config
+	db      *gorm.DB
+	log     *logger.Logger
+	clients map[uint]*TelegramClient
+	mu      sync.RWMutex
 }
 
 func NewManager(cfg *config.Config, db *gorm.DB, log *logger.Logger) *Manager {
