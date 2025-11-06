@@ -21,8 +21,8 @@ RUN bundle config set --local without 'development test' && \
     bundle install --jobs 4 --retry 3
 
 # Copy package.json and install node modules
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production
+COPY package.json ./
+RUN yarn install --production
 
 # Copy application code
 COPY . .
