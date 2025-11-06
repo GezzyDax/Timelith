@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     yarn \
     tzdata \
     git \
-    curl
+    curl \
+    yaml-dev
 
 # Set working directory
 WORKDIR /app
