@@ -1,0 +1,30 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+timelith-backend
+go-backend
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Go build cache
+.cache/
+
+# Application specific
+sessions/
+logs/
+uploads/
+tmp/
+*.log

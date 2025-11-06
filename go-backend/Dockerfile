@@ -7,11 +7,18 @@ RUN apk add --no-cache git gcc musl-dev
 WORKDIR /build
 
 # Copy go mod files
-COPY go.mod go.sum ./
-RUN go mod download
+COPY go.mod ./
+
+# Initialize go.sum if it doesn't exist or is invalid
+RUN go mod download || true
+RUN go mod tidy
 
 # Copy source code
 COPY . .
+
+# Ensure all dependencies are downloaded and verified
+RUN go mod download
+RUN go mod verify
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o timelith-backend ./cmd/server
