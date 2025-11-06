@@ -17,6 +17,7 @@ WORKDIR /app
 # Copy Gemfile and install gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && \
+    bundle update sidekiq redis redis-client && \
     bundle install --jobs 4 --retry 3
 
 # Copy package.json and install node modules
