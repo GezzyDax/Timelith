@@ -1,0 +1,76 @@
+name: Docker Build CI
+
+on:
+  push:
+    branches: [ main, claude/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-backend:
+    name: Build Go Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Go Backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./go-backend
+          file: ./go-backend/Dockerfile
+          push: false
+          tags: timelith-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-web-ui:
+    name: Build Web UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Web UI Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web-ui
+          file: ./web-ui/Dockerfile
+          push: false
+          tags: timelith-web:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-compose-test:
+    name: Docker Compose Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat << EOF > .env
+          POSTGRES_PASSWORD=test_password
+          TELEGRAM_APP_ID=12345
+          TELEGRAM_APP_HASH=test_hash
+          JWT_SECRET=test-jwt-secret-key-for-ci
+          ENCRYPTION_KEY=test-encryption-key-32-bytes-!
+          ENVIRONMENT=test
+          NEXT_PUBLIC_API_URL=http://localhost:8080
+          EOF
+
+      - name: Build with docker compose
+        run: docker compose build --parallel
+
+      - name: Check docker compose config
+        run: docker compose config

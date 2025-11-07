@@ -20,10 +20,10 @@ import (
 )
 
 type SessionManager struct {
-	cfg       *config.Config
-	clients   map[string]*telegram.Client
-	mu        sync.RWMutex
-	gcm       cipher.AEAD
+	cfg     *config.Config
+	clients map[string]*telegram.Client
+	mu      sync.RWMutex
+	gcm     cipher.AEAD
 }
 
 func NewSessionManager(cfg *config.Config) (*SessionManager, error) {
@@ -197,6 +197,7 @@ func (sm *SessionManager) LoadSession(ctx context.Context, account *models.Accou
 
 	// Create session storage from data
 	sessionStorage := &session.StorageMemory{}
+
 	// TODO: Deserialize sessionData into sessionStorage
 	logger.Log.Debug("Loaded encrypted session blob",
 		zap.String("phone", account.Phone),
@@ -282,7 +283,9 @@ func (sm *SessionManager) CloseClient(phone string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
-	if _, exists := sm.clients[phone]; !exists {
+	_, exists := sm.clients[phone]
+	if !exists {
+
 		return nil
 	}
 
