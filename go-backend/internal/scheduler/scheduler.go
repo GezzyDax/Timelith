@@ -44,9 +44,11 @@ func (s *Scheduler) Start(ctx context.Context) error {
 
 	// Add each schedule to cron
 	for _, schedule := range schedules {
-		if err := s.AddSchedule(&schedule); err != nil {
+		// Create a copy to avoid implicit memory aliasing
+		sched := schedule
+		if err := s.AddSchedule(&sched); err != nil {
 			logger.Log.Error("Failed to add schedule",
-				zap.String("schedule_id", schedule.ID.String()),
+				zap.String("schedule_id", sched.ID.String()),
 				zap.Error(err))
 			continue
 		}

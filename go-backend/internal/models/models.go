@@ -9,14 +9,14 @@ import (
 
 // Account represents a Telegram account
 type Account struct {
-	ID            uuid.UUID      `db:"id" json:"id"`
-	Phone         string         `db:"phone" json:"phone"`
-	SessionData   []byte         `db:"session_data" json:"-"` // Encrypted session
-	Status        string         `db:"status" json:"status"`   // active, inactive, error
-	LastLoginAt   sql.NullTime   `db:"last_login_at" json:"last_login_at"`
-	ErrorMessage  sql.NullString `db:"error_message" json:"error_message,omitempty"`
-	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
+	ID           uuid.UUID      `db:"id" json:"id"`
+	Phone        string         `db:"phone" json:"phone"`
+	SessionData  []byte         `db:"session_data" json:"-"` // Encrypted session
+	Status       string         `db:"status" json:"status"`  // active, inactive, error
+	LastLoginAt  sql.NullTime   `db:"last_login_at" json:"last_login_at"`
+	ErrorMessage sql.NullString `db:"error_message" json:"error_message,omitempty"`
+	CreatedAt    time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // Template represents a message template
@@ -41,18 +41,18 @@ type Channel struct {
 
 // Schedule represents a scheduled message job
 type Schedule struct {
-	ID          uuid.UUID      `db:"id" json:"id"`
-	Name        string         `db:"name" json:"name"`
-	AccountID   uuid.UUID      `db:"account_id" json:"account_id"`
-	TemplateID  uuid.UUID      `db:"template_id" json:"template_id"`
-	ChannelID   uuid.UUID      `db:"channel_id" json:"channel_id"`
-	CronExpr    string         `db:"cron_expr" json:"cron_expr"`
-	Timezone    string         `db:"timezone" json:"timezone"` // e.g., "Europe/Moscow"
-	Status      string         `db:"status" json:"status"`     // active, paused, completed
-	NextRunAt   sql.NullTime   `db:"next_run_at" json:"next_run_at"`
-	LastRunAt   sql.NullTime   `db:"last_run_at" json:"last_run_at"`
-	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at" json:"updated_at"`
+	ID         uuid.UUID    `db:"id" json:"id"`
+	Name       string       `db:"name" json:"name"`
+	AccountID  uuid.UUID    `db:"account_id" json:"account_id"`
+	TemplateID uuid.UUID    `db:"template_id" json:"template_id"`
+	ChannelID  uuid.UUID    `db:"channel_id" json:"channel_id"`
+	CronExpr   string       `db:"cron_expr" json:"cron_expr"`
+	Timezone   string       `db:"timezone" json:"timezone"` // e.g., "Europe/Moscow"
+	Status     string       `db:"status" json:"status"`     // active, paused, completed
+	NextRunAt  sql.NullTime `db:"next_run_at" json:"next_run_at"`
+	LastRunAt  sql.NullTime `db:"last_run_at" json:"last_run_at"`
+	CreatedAt  time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt  time.Time    `db:"updated_at" json:"updated_at"`
 }
 
 // JobLog represents execution history
