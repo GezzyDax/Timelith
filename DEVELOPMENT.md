@@ -15,7 +15,7 @@ This guide covers the development workflow, CI/CD pipeline, and best practices f
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.23+
 - Node.js 18+
 - Docker & Docker Compose
 - Make (optional, but recommended)
