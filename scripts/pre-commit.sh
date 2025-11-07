@@ -31,7 +31,7 @@ run_check() {
 
     echo -e "${BLUE}┌─ ${check_name}${NC}"
 
-    if eval "cd $dir && $check_command" > /tmp/check_output 2>&1; then
+    if (cd "$dir" && eval "$check_command") > /tmp/check_output 2>&1; then
         echo -e "${GREEN}└─ ✓ PASSED${NC}"
         PASSED_CHECKS=$((PASSED_CHECKS + 1))
         echo ""

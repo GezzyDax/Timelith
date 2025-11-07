@@ -33,9 +33,9 @@ func SetupSetupRouter() *fiber.App {
 	// Health check (minimal)
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"status":        "setup_mode",
-			"setup_needed":  true,
-			"message":       "Application is in setup mode",
+			"status":       "setup_mode",
+			"setup_needed": true,
+			"message":      "Application is in setup mode",
 		})
 	})
 
