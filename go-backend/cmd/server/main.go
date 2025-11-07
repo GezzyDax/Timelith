@@ -12,11 +12,73 @@ import (
 	"github.com/GezzyDax/timelith/go-backend/internal/database"
 	"github.com/GezzyDax/timelith/go-backend/internal/logger"
 	"github.com/GezzyDax/timelith/go-backend/internal/scheduler"
+	"github.com/GezzyDax/timelith/go-backend/internal/setup"
 	"github.com/GezzyDax/timelith/go-backend/internal/telegram"
 	"go.uber.org/zap"
 )
 
 func main() {
+	// Check if setup is needed
+	if setup.CheckIfSetupNeeded() {
+		fmt.Println("Конфигурация не найдена. Запуск мастера установки...\n")
+
+		// Run interactive setup
+		setupConfig, err := setup.RunSetup()
+		if err != nil {
+			fmt.Printf("Ошибка установки: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Validate configuration
+		if err := setup.ValidateConfig(setupConfig); err != nil {
+			fmt.Printf("Ошибка валидации: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Save configuration to .env
+		if err := setup.SaveConfig(setupConfig); err != nil {
+			fmt.Printf("Ошибка сохранения конфигурации: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("\nПодключение к базе данных для создания администратора...")
+
+		// Build database URL
+		databaseURL := fmt.Sprintf(
+			"postgres://timelith:%s@localhost:5432/timelith?sslmode=disable",
+			setupConfig.PostgresPassword,
+		)
+
+		// Connect to database
+		db, err := database.Connect(databaseURL)
+		if err != nil {
+			fmt.Printf("Ошибка подключения к БД: %v\n", err)
+			fmt.Println("Убедитесь, что PostgreSQL запущен и доступен.")
+			os.Exit(1)
+		}
+
+		// Run migrations
+		if err := db.RunMigrations(); err != nil {
+			fmt.Printf("Ошибка миграций БД: %v\n", err)
+			db.Close()
+			os.Exit(1)
+		}
+
+		// Create admin user
+		if err := setup.CreateAdminUser(db, setupConfig.AdminUsername, setupConfig.AdminPassword); err != nil {
+			fmt.Printf("Ошибка создания администратора: %v\n", err)
+			db.Close()
+			os.Exit(1)
+		}
+
+		db.Close()
+
+		// Show summary
+		setup.ShowSummary(setupConfig)
+
+		fmt.Println("Запуск сервера...\n")
+	}
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {

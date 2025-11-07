@@ -1,6 +1,8 @@
 module github.com/GezzyDax/timelith/go-backend
 
-go 1.23
+go 1.24.0
+
+toolchain go1.24.7
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.0
@@ -38,7 +40,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/term v0.36.0 // indirect
 	nhooyr.io/websocket v1.8.10 // indirect
 	rsc.io/qr v0.2.0 // indirect
 )
