@@ -71,17 +71,17 @@ func (s *Scheduler) AddSchedule(schedule *models.Schedule) error {
 		return fmt.Errorf("invalid timezone: %w", err)
 	}
 
-	// Create cron with timezone
 	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cronSchedule, err := parser.Parse(schedule.CronExpr)
 	if err != nil {
 		return fmt.Errorf("invalid cron expression: %w", err)
 	}
 
-	// Add job to cron
-	entryID := s.cron.Schedule(cron.NewChain().Schedule(cronSchedule), cron.FuncJob(func() {
+	job := cron.NewChain().Then(cron.FuncJob(func() {
 		s.executeSchedule(schedule.ID)
 	}))
+
+	entryID := s.cron.Schedule(cronSchedule, job)
 
 	s.jobs[schedule.ID] = entryID
 
@@ -113,8 +113,6 @@ func (s *Scheduler) RemoveSchedule(scheduleID uuid.UUID) {
 }
 
 func (s *Scheduler) executeSchedule(scheduleID uuid.UUID) {
-	ctx := context.Background()
-
 	logger.Log.Info("Executing schedule",
 		zap.String("schedule_id", scheduleID.String()))
 
