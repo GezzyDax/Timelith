@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: timelith-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: timelith
+      POSTGRES_USER: timelith
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-timelith_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timelith"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - timelith-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: timelith-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - timelith-network
+
+  go-backend:
+    build:
+      context: ./go-backend
+      dockerfile: Dockerfile
+    container_name: timelith-backend
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      DATABASE_URL: postgres://timelith:${POSTGRES_PASSWORD:-timelith_password}@postgres:5432/timelith?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      TELEGRAM_APP_ID: ${TELEGRAM_APP_ID}
+      TELEGRAM_APP_HASH: ${TELEGRAM_APP_HASH}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-your-32-byte-encryption-key-here}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - timelith-network
+
+  web-ui:
+    build:
+      context: ./web-ui
+      dockerfile: Dockerfile
+    container_name: timelith-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - go-backend
+    networks:
+      - timelith-network
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  timelith-network:
+    driver: bridge
