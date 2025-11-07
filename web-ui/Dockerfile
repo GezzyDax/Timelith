@@ -3,6 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies required by Next.js on Alpine
+RUN apk add --no-cache libc6-compat
+
+# Disable telemetry collection during builds
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Copy package files
 COPY package*.json ./
 
@@ -19,6 +25,9 @@ RUN npm run build
 FROM node:20-alpine
 
 WORKDIR /app
+
+# Ensure runtime has required compatibility libraries
+RUN apk add --no-cache libc6-compat
 
 # Copy built application
 COPY --from=builder /app/.next/standalone ./
