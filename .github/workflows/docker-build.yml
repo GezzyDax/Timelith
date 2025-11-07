@@ -69,8 +69,8 @@ jobs:
           NEXT_PUBLIC_API_URL=http://localhost:8080
           EOF
 
-      - name: Build with docker-compose
-        run: docker-compose build --parallel
+      - name: Build with docker compose
+        run: docker compose build --parallel
 
-      - name: Check docker-compose config
-        run: docker-compose config
+      - name: Check docker compose config
+        run: docker compose config
