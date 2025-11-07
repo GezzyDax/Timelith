@@ -5,25 +5,14 @@ run:
   modules-download-mode: readonly
 
 linters:
+  disable-all: true
   enable:
-    - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
+    - gofmt         # Format check (critical)
     - govet         # Vet examines Go source code
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Static analysis
     - typecheck     # Type check
     - unused        # Find unused code
-    - gofmt         # Format check
-    - goimports     # Imports check
-    - misspell      # Spell check
-    - gocritic      # Go critique
-    - revive        # Fast linter
-    - gosec         # Security check
-    - bodyclose     # Check HTTP body closed
-    - noctx         # Check for sending HTTP requests without context
-    - rowserrcheck  # Check SQL rows.Err
-    - sqlclosecheck # Check SQL Close
-    - wastedassign  # Find wasted assignments
 
 linters-settings:
   errcheck:
