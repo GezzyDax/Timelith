@@ -20,10 +20,10 @@ import (
 )
 
 type SessionManager struct {
-	cfg       *config.Config
-	clients   map[string]*telegram.Client
-	mu        sync.RWMutex
-	gcm       cipher.AEAD
+	cfg     *config.Config
+	clients map[string]*telegram.Client
+	mu      sync.RWMutex
+	gcm     cipher.AEAD
 }
 
 func NewSessionManager(cfg *config.Config) (*SessionManager, error) {
@@ -190,7 +190,7 @@ func (sm *SessionManager) LoadSession(ctx context.Context, account *models.Accou
 	}
 
 	// Decrypt session
-	_, err := sm.DecryptSession(account.SessionData)
+	sessionData, err := sm.DecryptSession(account.SessionData)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt session: %w", err)
 	}
