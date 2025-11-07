@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"sync"
@@ -199,6 +198,9 @@ func (sm *SessionManager) LoadSession(ctx context.Context, account *models.Accou
 	// Create session storage from data
 	sessionStorage := &session.StorageMemory{}
 	// TODO: Deserialize sessionData into sessionStorage
+	logger.Log.Debug("Loaded encrypted session blob",
+		zap.String("phone", account.Phone),
+		zap.Int("bytes", len(sessionData)))
 
 	// Create client with session
 	client := telegram.NewClient(sm.cfg.TelegramAppID, sm.cfg.TelegramAppHash, telegram.Options{
@@ -280,8 +282,7 @@ func (sm *SessionManager) CloseClient(phone string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
-	client, exists := sm.clients[phone]
-	if !exists {
+	if _, exists := sm.clients[phone]; !exists {
 		return nil
 	}
 

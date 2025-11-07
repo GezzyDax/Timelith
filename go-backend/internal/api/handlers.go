@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/GezzyDax/timelith/go-backend/internal/auth"
