@@ -1,8 +1,7 @@
-# Release v0.1.1
+# Release v0.1.2
 
 ## Changes
 
-- Merge pull request #6 from GezzyDax/claude/fix-postgres-version-mismatch-011CUtcfNYpTEjXbPocG5PTF
-- 🔧 chore: upgrade Go from 1.21 to 1.23 across the project
+- Merge pull request #7 from GezzyDax/claude/upgrade-codeql-action-v3-011CUtcAncsQpprcx2yTnwo6
 
-**Full Changelog**: https://github.com/GezzyDax/Timelith/compare/v0.1.0...v0.1.1
+**Full Changelog**: https://github.com/GezzyDax/Timelith/compare/v0.1.1...v0.1.2
