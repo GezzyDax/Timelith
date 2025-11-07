@@ -30,10 +30,17 @@ func (s *Server) respondError(w http.ResponseWriter, status int, message string)
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	s.respondJSON(w, http.StatusOK, map[string]string{
-		"status": "ok",
-		"service": "timelith-backend",
-	})
+	// Accept both GET and HEAD requests for health checks
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Only write body for GET requests (not HEAD)
+	if r.Method == http.MethodGet {
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "ok",
+			"service": "timelith-backend",
+		})
+	}
 }
 
 // Telegram Auth Handlers

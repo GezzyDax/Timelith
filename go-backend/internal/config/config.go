@@ -8,14 +8,14 @@ import (
 )
 
 type Config struct {
-	Port                   string
-	DatabaseURL            string
-	RedisURL               string
-	TelegramAppID          string
-	TelegramAppHash        string
-	APIKey                 string
-	SessionEncryptionKey   string
-	Environment            string
+	Port                 string
+	DatabaseURL          string
+	RedisURL             string
+	TelegramAppID        string
+	TelegramAppHash      string
+	APIKey               string
+	SessionEncryptionKey string
+	Environment          string
 }
 
 func Load() (*Config, error) {
@@ -23,14 +23,14 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		Port:                   getEnv("PORT", "8080"),
-		DatabaseURL:            getEnv("DATABASE_URL", ""),
-		RedisURL:               getEnv("REDIS_URL", "redis://localhost:6379/0"),
-		TelegramAppID:          getEnv("TELEGRAM_APP_ID", ""),
-		TelegramAppHash:        getEnv("TELEGRAM_APP_HASH", ""),
-		APIKey:                 getEnv("GO_API_KEY", ""),
-		SessionEncryptionKey:   getEnv("SESSION_ENCRYPTION_KEY", ""),
-		Environment:            getEnv("ENVIRONMENT", "production"),
+		Port:                 getEnv("PORT", "8080"),
+		DatabaseURL:          getEnv("DATABASE_URL", ""),
+		RedisURL:             getEnv("REDIS_URL", "redis://localhost:6379/0"),
+		TelegramAppID:        getEnv("TELEGRAM_APP_ID", ""),
+		TelegramAppHash:      getEnv("TELEGRAM_APP_HASH", ""),
+		APIKey:               getEnv("GO_API_KEY", ""),
+		SessionEncryptionKey: getEnv("SESSION_ENCRYPTION_KEY", ""),
+		Environment:          getEnv("ENVIRONMENT", "production"),
 	}
 
 	if err := cfg.Validate(); err != nil {

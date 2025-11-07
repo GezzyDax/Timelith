@@ -50,8 +50,9 @@ func NewRouter(cfg *config.Config, db *gorm.DB, redisClient *redis.Client, tm *t
 		MaxAge:           300,
 	}))
 
-	// Health check
+	// Health check - Accept both GET and HEAD for Docker healthcheck
 	r.Get("/health", s.handleHealth)
+	r.Head("/health", s.handleHealth)
 
 	// API routes
 	r.Route("/api/v1", func(r chi.Router) {

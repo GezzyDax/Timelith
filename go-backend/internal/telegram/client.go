@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/timelith/backend/internal/config"
 	"github.com/timelith/backend/internal/models"
