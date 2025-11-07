@@ -20,63 +20,35 @@ import (
 func main() {
 	// Check if setup is needed
 	if setup.CheckIfSetupNeeded() {
-		fmt.Println("Конфигурация не найдена. Запуск мастера установки...\n")
+		fmt.Println("========================================")
+		fmt.Println("  Setup Required")
+		fmt.Println("========================================")
+		fmt.Println()
+		fmt.Println("Configuration not found. Starting in setup mode...")
+		fmt.Println("Please open your browser and navigate to:")
+		fmt.Println()
+		fmt.Println("  http://localhost:8080")
+		fmt.Println()
+		fmt.Println("The web-based setup wizard will guide you through")
+		fmt.Println("the initial configuration process.")
+		fmt.Println()
+		fmt.Println("After completing setup, please restart the server.")
+		fmt.Println("========================================")
 
-		// Run interactive setup
-		setupConfig, err := setup.RunSetup()
-		if err != nil {
-			fmt.Printf("Ошибка установки: %v\n", err)
+		// Setup minimal server for setup wizard
+		app := api.SetupSetupRouter()
+
+		// Start setup server
+		addr := ":8080"
+		fmt.Printf("\nSetup server listening on %s\n\n", addr)
+
+		if err := app.Listen(addr); err != nil {
+			fmt.Printf("Failed to start setup server: %v\n", err)
 			os.Exit(1)
 		}
 
-		// Validate configuration
-		if err := setup.ValidateConfig(setupConfig); err != nil {
-			fmt.Printf("Ошибка валидации: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Save configuration to .env
-		if err := setup.SaveConfig(setupConfig); err != nil {
-			fmt.Printf("Ошибка сохранения конфигурации: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Println("\nПодключение к базе данных для создания администратора...")
-
-		// Build database URL
-		databaseURL := fmt.Sprintf(
-			"postgres://timelith:%s@localhost:5432/timelith?sslmode=disable",
-			setupConfig.PostgresPassword,
-		)
-
-		// Connect to database
-		db, err := database.Connect(databaseURL)
-		if err != nil {
-			fmt.Printf("Ошибка подключения к БД: %v\n", err)
-			fmt.Println("Убедитесь, что PostgreSQL запущен и доступен.")
-			os.Exit(1)
-		}
-
-		// Run migrations
-		if err := db.RunMigrations(); err != nil {
-			fmt.Printf("Ошибка миграций БД: %v\n", err)
-			db.Close()
-			os.Exit(1)
-		}
-
-		// Create admin user
-		if err := setup.CreateAdminUser(db, setupConfig.AdminUsername, setupConfig.AdminPassword); err != nil {
-			fmt.Printf("Ошибка создания администратора: %v\n", err)
-			db.Close()
-			os.Exit(1)
-		}
-
-		db.Close()
-
-		// Show summary
-		setup.ShowSummary(setupConfig)
-
-		fmt.Println("Запуск сервера...\n")
+		// After setup is complete via web UI, user should restart
+		return
 	}
 
 	// Load configuration

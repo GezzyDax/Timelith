@@ -10,50 +10,68 @@ Backend service for Timelith Telegram account manager.
 - REST API (Fiber)
 - PostgreSQL database
 - Redis queue
-- **Interactive Setup Wizard** - First-run configuration assistant
+- **Web-Based Setup Wizard** - First-run configuration through browser interface
 
 ## Quick Start
 
 ### First Time Setup
 
-При первом запуске автоматически запустится интерактивный мастер установки:
+При первом запуске автоматически запустится **веб-интерфейс мастера установки**:
 
 ```bash
-# Убедитесь, что PostgreSQL запущен
+# 1. Убедитесь, что PostgreSQL запущен
 docker-compose up -d postgres
 
-# Запустите приложение
+# 2. Запустите бэкенд
+cd go-backend
 go run cmd/server/main.go
+
+# 3. В другом терминале запустите фронтенд
+cd web-ui
+npm install
+npm run dev
 ```
 
-Мастер установки попросит вас указать:
+После запуска откройте браузер и перейдите по адресу:
 
-1. **Telegram API credentials** (получите на https://my.telegram.org)
-   - App ID
-   - App Hash
+**http://localhost:3000**
 
-2. **Настройки сервера**
-   - Порт (по умолчанию: 8080)
-   - Окружение (production/development)
+Вы автоматически будете перенаправлены на веб-форму установки, где нужно указать:
 
-3. **Настройки базы данных**
-   - Пароль PostgreSQL
+**Шаг 1: Telegram API**
+- App ID и App Hash (получите на https://my.telegram.org)
 
-4. **Первый администратор**
-   - Логин
-   - Пароль
+**Шаг 2: Сервер и База Данных**
+- Порт сервера (по умолчанию: 8080)
+- Окружение (production/development)
+- Пароль PostgreSQL
+
+**Шаг 3: Первый Администратор**
+- Логин (минимум 3 символа)
+- Пароль (минимум 6 символов)
 
 Ключи безопасности (JWT_SECRET и ENCRYPTION_KEY) генерируются автоматически.
 
-После завершения установки все настройки сохраняются в файл `.env`, и создается первый администратор в базе данных.
+После завершения установки:
+- Все настройки сохраняются в `.env`
+- Создается первый администратор в БД
+- **Перезапустите сервер** для применения изменений
 
 ### Последующие запуски
 
-После первой настройки просто запустите:
+После первой настройки:
 
 ```bash
+# Бэкенд
+cd go-backend
 go run cmd/server/main.go
+
+# Фронтенд (в другом терминале)
+cd web-ui
+npm run dev
 ```
+
+Откройте http://localhost:3000 и войдите с учетными данными администратора.
 
 ## Development
 

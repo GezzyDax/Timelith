@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Navbar } from '@/components/layout/Navbar'
@@ -9,13 +9,38 @@ import { api } from '@/lib/api'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/login')
+    const checkSetup = async () => {
+      try {
+        const status = await api.checkSetupStatus()
+        if (status.setup_required) {
+          router.push('/setup')
+          return
+        }
+      } catch (err) {
+        // If setup check fails, might be in setup mode or API is down
+        console.error('Setup check failed:', err)
+      }
+
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.push('/login')
+      }
+      setChecking(false)
     }
+
+    checkSetup()
   }, [router])
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
+  }
 
   const { data: accounts } = useQuery({
     queryKey: ['accounts'],

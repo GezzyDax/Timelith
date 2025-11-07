@@ -69,11 +69,11 @@ func RunSetup() (*SetupConfig, error) {
 	// Security settings - auto-generate
 	fmt.Println("4. Генерация ключей безопасности...")
 	var err error
-	config.JWTSecret, err = generateSecret(32)
+	config.JWTSecret, err = GenerateSecret(32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate JWT secret: %w", err)
 	}
-	config.EncryptionKey, err = generateSecret(32)
+	config.EncryptionKey, err = GenerateSecret(32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate encryption key: %w", err)
 	}
@@ -169,8 +169,8 @@ func CreateAdminUser(db *database.DB, username, password string) error {
 	return nil
 }
 
-// generateSecret генерирует криптографически стойкий случайный ключ
-func generateSecret(length int) (string, error) {
+// GenerateSecret генерирует криптографически стойкий случайный ключ (exported)
+func GenerateSecret(length int) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
