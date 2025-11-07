@@ -11,6 +11,31 @@ export default function DashboardPage() {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
 
+  // All hooks must be called before any conditional returns
+  const { data: accounts } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => api.getAccounts(),
+    enabled: !checking, // Only run when not checking
+  })
+
+  const { data: templates } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => api.getTemplates(),
+    enabled: !checking,
+  })
+
+  const { data: schedules } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: () => api.getSchedules(),
+    enabled: !checking,
+  })
+
+  const { data: logs } = useQuery({
+    queryKey: ['logs'],
+    queryFn: () => api.getAllLogs(),
+    enabled: !checking,
+  })
+
   useEffect(() => {
     const checkSetup = async () => {
       try {
@@ -41,26 +66,6 @@ export default function DashboardPage() {
       </div>
     )
   }
-
-  const { data: accounts } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => api.getAccounts(),
-  })
-
-  const { data: templates } = useQuery({
-    queryKey: ['templates'],
-    queryFn: () => api.getTemplates(),
-  })
-
-  const { data: schedules } = useQuery({
-    queryKey: ['schedules'],
-    queryFn: () => api.getSchedules(),
-  })
-
-  const { data: logs } = useQuery({
-    queryKey: ['logs'],
-    queryFn: () => api.getAllLogs(),
-  })
 
   const stats = [
     { name: 'Total Accounts', value: accounts?.length || 0, href: '/accounts' },
