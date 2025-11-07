@@ -1,45 +1,84 @@
-.PHONY: help dev-check quick-start test-all clean build up down logs
+.PHONY: help install update pre-commit dev-check quick-start test-all clean build up down logs
 
 # Default target
 help:
 	@echo "Timelith Development Commands"
 	@echo "=============================="
 	@echo ""
-	@echo "Development:"
+	@echo "🚀 Setup:"
+	@echo "  make install        - Install all dependencies (Go + npm)"
+	@echo "  make update         - Update all dependencies"
+	@echo "  make setup-hooks    - Install git pre-commit hooks"
+	@echo ""
+	@echo "🔍 Development:"
 	@echo "  make quick-start    - Start infrastructure (PostgreSQL, Redis)"
-	@echo "  make dev-check      - Run all checks before committing"
+	@echo "  make pre-commit     - Run pre-commit checks (lint, test, build)"
+	@echo "  make dev-check      - Alias for pre-commit"
 	@echo "  make test-all       - Run all tests (Go, Docker builds, integration)"
 	@echo ""
-	@echo "Docker Compose:"
+	@echo "🐳 Docker Compose:"
 	@echo "  make build          - Build all Docker images"
 	@echo "  make up             - Start all services"
 	@echo "  make down           - Stop all services"
 	@echo "  make logs           - Show logs from all services"
 	@echo "  make restart        - Restart all services"
 	@echo ""
-	@echo "Cleanup:"
+	@echo "🧹 Cleanup:"
 	@echo "  make clean          - Clean all build artifacts and caches"
 	@echo "  make clean-docker   - Remove all Docker containers and volumes"
 	@echo ""
-	@echo "Versioning:"
+	@echo "📦 Versioning:"
 	@echo "  make bump-version   - Manually bump version"
 	@echo ""
-	@echo "Backend (Go):"
+	@echo "⚙️  Backend (Go):"
 	@echo "  make backend-build  - Build Go backend"
 	@echo "  make backend-test   - Run Go tests"
 	@echo "  make backend-lint   - Run Go linter"
 	@echo "  make backend-run    - Run Go backend locally"
 	@echo ""
-	@echo "Frontend (Next.js):"
+	@echo "🎨 Frontend (Next.js):"
 	@echo "  make web-install    - Install npm dependencies"
 	@echo "  make web-dev        - Run Next.js in dev mode"
 	@echo "  make web-build      - Build Next.js for production"
 	@echo "  make web-lint       - Run ESLint"
 	@echo ""
 
+# Setup commands
+install:
+	@echo "📦 Installing all dependencies..."
+	@echo ""
+	@echo "=== Installing Go dependencies ==="
+	cd go-backend && go mod download && go mod tidy
+	@echo ""
+	@echo "=== Installing npm dependencies ==="
+	cd web-ui && npm ci
+	@echo ""
+	@echo "✅ All dependencies installed!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Copy .env.example to .env and configure"
+	@echo "  2. Run 'make setup-hooks' to install git hooks"
+	@echo "  3. Run 'make quick-start' to start infrastructure"
+
+update:
+	@echo "🔄 Updating all dependencies..."
+	@echo ""
+	@echo "=== Updating Go dependencies ==="
+	cd go-backend && go get -u ./... && go mod tidy
+	@echo ""
+	@echo "=== Updating npm dependencies ==="
+	cd web-ui && npm update
+	@echo ""
+	@echo "✅ All dependencies updated!"
+
+setup-hooks:
+	@./scripts/setup-git-hooks.sh
+
 # Development scripts
-dev-check:
-	@./scripts/dev-check.sh
+pre-commit:
+	@./scripts/pre-commit.sh
+
+dev-check: pre-commit
 
 quick-start:
 	@./scripts/quick-start.sh

@@ -152,14 +152,24 @@ A self-hosted service for managing Telegram accounts, message templates, and sch
 We provide convenient scripts and Makefile commands for solo developers:
 
 ```bash
+# First time setup
+git clone https://github.com/GezzyDax/Timelith.git
+cd Timelith
+
+# Install all dependencies (Go + npm)
+make install
+
+# Setup git hooks for automatic pre-commit checks
+make setup-hooks
+
 # Show all available commands
 make help
 
 # Quick start infrastructure (PostgreSQL, Redis)
 make quick-start
 
-# Run all checks before committing
-make dev-check
+# Before committing - run all checks (lint, test, build)
+make pre-commit
 
 # Run all tests
 make test-all
@@ -172,17 +182,25 @@ Located in `scripts/` directory:
 | Script | Description |
 |--------|-------------|
 | `quick-start.sh` | Start infrastructure services |
-| `dev-check.sh` | Run all checks (lint, test, build) |
+| `pre-commit.sh` | Run pre-commit checks (lint, test, build) |
 | `test-all.sh` | Run comprehensive test suite |
 | `clean-all.sh` | Clean build artifacts and caches |
 | `bump-version.sh` | Manually bump semantic version |
+| `setup-git-hooks.sh` | Install git hooks for automatic checks |
 
 ### Makefile Commands
+
+**Setup:**
+```bash
+make install        # Install all dependencies (Go + npm)
+make update         # Update all dependencies
+make setup-hooks    # Install git pre-commit hooks
+```
 
 **Development:**
 ```bash
 make quick-start    # Start PostgreSQL & Redis
-make dev-check      # Pre-commit checks
+make pre-commit     # Pre-commit checks (lint, test, build)
 make test-all       # All tests
 make clean          # Clean artifacts
 ```

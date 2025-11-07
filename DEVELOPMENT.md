@@ -19,6 +19,7 @@ This guide covers the development workflow, CI/CD pipeline, and best practices f
 - Node.js 18+
 - Docker & Docker Compose
 - Make (optional, but recommended)
+- golangci-lint (optional, for linting)
 
 ### Quick Setup
 
@@ -27,17 +28,25 @@ This guide covers the development workflow, CI/CD pipeline, and best practices f
 git clone https://github.com/GezzyDax/Timelith.git
 cd Timelith
 
-# 2. Set up environment
+# 2. Install all dependencies
+make install
+
+# 3. Set up environment
 cp .env.example .env
 # Edit .env with your credentials
 
-# 3. Start infrastructure
-make quick-start
+# 4. Setup git hooks (recommended)
+make setup-hooks
 
-# 4. Install dependencies
-cd go-backend && go mod download && cd ..
-cd web-ui && npm ci && cd ..
+# 5. Start infrastructure
+make quick-start
 ```
+
+This will:
+- Install Go dependencies
+- Install npm dependencies
+- Set up pre-commit hooks
+- Start PostgreSQL and Redis containers
 
 ## Development Workflow
 
@@ -54,14 +63,54 @@ cd web-ui && npm ci && cd ..
 
 3. **Run checks before committing**
    ```bash
-   make dev-check
+   make pre-commit
    ```
+
+   This will check:
+   - ✓ Go code formatting
+   - ✓ Go build
+   - ✓ Go tests with race detection
+   - ✓ Go modules tidy
+   - ✓ Go linting (if golangci-lint installed)
+   - ✓ TypeScript type checking
+   - ✓ ESLint
+   - ✓ Next.js build
+   - ✓ Docker Compose config
 
 4. **Commit your changes**
    ```bash
    git add .
    git commit -m "feat: add new feature"
    ```
+
+   If you set up git hooks with `make setup-hooks`, the pre-commit checks will run automatically!
+
+### Git Hooks
+
+We provide automatic git hooks for quality assurance:
+
+```bash
+# Install git hooks
+make setup-hooks
+```
+
+This installs two hooks:
+
+1. **pre-commit** - Runs `make pre-commit` automatically before each commit
+2. **commit-msg** - Validates commit message format (conventional commits)
+
+**Benefits:**
+- Catches issues before they reach CI
+- Enforces code quality locally
+- Validates commit message format
+- Saves CI time and resources
+
+**Skip hooks if needed:**
+```bash
+git commit --no-verify -m "message"
+```
+
+(Not recommended - only use in emergencies)
 
 ### Commit Message Convention
 
@@ -95,19 +144,33 @@ Starts PostgreSQL and Redis containers for local development.
 make quick-start
 ```
 
-#### dev-check.sh
-Runs comprehensive pre-commit checks:
-- Go formatting and linting
-- Go tests with race detection
-- TypeScript linting
-- TypeScript type checking
-- Build verification
-- Docker Compose config validation
+#### pre-commit.sh
+Runs comprehensive pre-commit checks with beautiful output:
+- ✓ Go formatting and linting
+- ✓ Go tests with race detection
+- ✓ Go modules tidy
+- ✓ TypeScript linting
+- ✓ TypeScript type checking
+- ✓ Next.js build verification
+- ✓ Docker Compose config validation
 
 ```bash
-./scripts/dev-check.sh
+./scripts/pre-commit.sh
 # Or
-make dev-check
+make pre-commit
+```
+
+This is the script you should run before every commit to ensure everything works.
+
+#### setup-git-hooks.sh
+Installs git hooks for automatic quality checks:
+- pre-commit hook: runs `make pre-commit`
+- commit-msg hook: validates commit message format
+
+```bash
+./scripts/setup-git-hooks.sh
+# Or
+make setup-hooks
 ```
 
 #### test-all.sh
@@ -342,7 +405,7 @@ npx tsc --noEmit
 Always run before committing:
 
 ```bash
-make dev-check
+make pre-commit
 ```
 
 This ensures:
@@ -350,6 +413,47 @@ This ensures:
 - All tests pass
 - No type errors
 - Builds successfully
+- Go modules are tidy
+- Docker config is valid
+
+**Automatic checks with git hooks:**
+
+Install once:
+```bash
+make setup-hooks
+```
+
+Then every `git commit` will automatically run pre-commit checks!
+
+**Output example:**
+```
+╔══════════════════════════════════════════╗
+║   🔍 Pre-Commit Quality Checks          ║
+╔══════════════════════════════════════════╝
+
+═══ Go Backend Checks ═══
+
+┌─ Go Code Formatting
+└─ ✓ PASSED
+
+┌─ Go Build
+└─ ✓ PASSED
+
+┌─ Go Tests (with race detection)
+└─ ✓ PASSED
+
+...
+
+╔══════════════════════════════════════════╗
+║   Summary                              ║
+╠══════════════════════════════════════════╣
+║  Total checks:   8                       ║
+║  Passed:         8                       ║
+║  Failed:         0                       ║
+╚══════════════════════════════════════════╝
+
+✅ All checks passed! Ready to commit.
+```
 
 ## Best Practices
 
