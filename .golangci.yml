@@ -1,0 +1,69 @@
+# golangci-lint configuration for Go backend
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - typecheck     # Type check
+    - unused        # Find unused code
+    - gofmt         # Format check
+    - goimports     # Imports check
+    - misspell      # Spell check
+    - gocritic      # Go critique
+    - revive        # Fast linter
+    - gosec         # Security check
+    - bodyclose     # Check HTTP body closed
+    - noctx         # Check for sending HTTP requests without context
+    - rowserrcheck  # Check SQL rows.Err
+    - sqlclosecheck # Check SQL Close
+    - wastedassign  # Find wasted assignments
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/GezzyDax/Timelith
+
+  misspell:
+    locale: US
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: exported
+        disabled: false
+
+  gosec:
+    excludes:
+      - G104 # Audit errors not checked (covered by errcheck)
+      - G307 # Deferring unsafe method (false positives)
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  sort-results: true
