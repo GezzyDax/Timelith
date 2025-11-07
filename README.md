@@ -1,5 +1,9 @@
 # Timelith - Self-Hosted Telegram Account Manager
 
+[![CI Pipeline](https://github.com/GezzyDax/Timelith/actions/workflows/ci.yml/badge.svg)](https://github.com/GezzyDax/Timelith/actions/workflows/ci.yml)
+[![Release](https://github.com/GezzyDax/Timelith/actions/workflows/release.yml/badge.svg)](https://github.com/GezzyDax/Timelith/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A self-hosted service for managing Telegram accounts, message templates, and scheduling broadcasts through a convenient web dashboard.
 
 ## 🚀 Features
@@ -143,6 +147,91 @@ A self-hosted service for managing Telegram accounts, message templates, and sch
 
 ## 🛠️ Development
 
+### Quick Development Setup
+
+We provide convenient scripts and Makefile commands for solo developers:
+
+```bash
+# First time setup
+git clone https://github.com/GezzyDax/Timelith.git
+cd Timelith
+
+# Install all dependencies (Go + npm)
+make install
+
+# Setup git hooks for automatic pre-commit checks
+make setup-hooks
+
+# Show all available commands
+make help
+
+# Quick start infrastructure (PostgreSQL, Redis)
+make quick-start
+
+# Before committing - run all checks (lint, test, build)
+make pre-commit
+
+# Run all tests
+make test-all
+```
+
+### Development Scripts
+
+Located in `scripts/` directory:
+
+| Script | Description |
+|--------|-------------|
+| `quick-start.sh` | Start infrastructure services |
+| `pre-commit.sh` | Run pre-commit checks (lint, test, build) |
+| `test-all.sh` | Run comprehensive test suite |
+| `clean-all.sh` | Clean build artifacts and caches |
+| `bump-version.sh` | Manually bump semantic version |
+| `setup-git-hooks.sh` | Install git hooks for automatic checks |
+
+### Makefile Commands
+
+**Setup:**
+```bash
+make install        # Install all dependencies (Go + npm)
+make update         # Update all dependencies
+make setup-hooks    # Install git pre-commit hooks
+```
+
+**Development:**
+```bash
+make quick-start    # Start PostgreSQL & Redis
+make pre-commit     # Pre-commit checks (lint, test, build)
+make test-all       # All tests
+make clean          # Clean artifacts
+```
+
+**Backend (Go):**
+```bash
+make backend-build  # Build binary
+make backend-test   # Run tests
+make backend-lint   # Run linter
+make backend-run    # Run locally
+make backend-fmt    # Format code
+```
+
+**Frontend (Next.js):**
+```bash
+make web-install    # Install dependencies
+make web-dev        # Dev server
+make web-build      # Production build
+make web-lint       # Run ESLint
+make web-type-check # TypeScript check
+```
+
+**Docker:**
+```bash
+make build          # Build images
+make up             # Start services
+make down           # Stop services
+make logs           # View logs
+make restart        # Restart all
+```
+
 ### Local Development (without Docker)
 
 **Backend:**
@@ -160,16 +249,41 @@ npm install
 npm run dev
 ```
 
-### Building from Source
+### CI/CD Pipeline
+
+Our automated CI/CD includes:
+
+- **Continuous Integration**: Runs on every push and PR
+  - Go: linting, testing, building
+  - TypeScript: linting, type checking, building
+  - Docker: image builds with caching
+  - Integration tests
+
+- **Pull Request Checks**: Additional PR-specific validation
+  - Security scanning with Trivy
+  - Dependency vulnerability checks
+  - Commit message validation
+  - PR statistics
+
+- **Automatic Versioning**: On main branch pushes
+  - Semantic versioning (major.minor.patch)
+  - Automatic changelog generation
+  - GitHub releases
+  - Docker image tagging
+
+**Version Bump Convention:**
+- `feat:` or `feature:` commits → minor version bump
+- `BREAKING CHANGE:` or `major:` → major version bump
+- Other commits → patch version bump
+
+### Manual Version Bump
 
 ```bash
-# Build backend
-cd go-backend
-make build
+# Interactive version bump
+make bump-version
 
-# Build frontend
-cd web-ui
-npm run build
+# Or use the script directly
+./scripts/bump-version.sh
 ```
 
 ## 🔒 Security

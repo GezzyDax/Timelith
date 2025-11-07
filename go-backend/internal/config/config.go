@@ -24,8 +24,8 @@ type Config struct {
 	TelegramAppHash string
 
 	// Security
-	JWTSecret       string
-	EncryptionKey   string
+	JWTSecret     string
+	EncryptionKey string
 
 	// Environment
 	Environment string

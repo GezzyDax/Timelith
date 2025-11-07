@@ -1,0 +1,82 @@
+# golangci-lint configuration for Go backend
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt         # Format check (critical)
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - typecheck     # Type check
+    - unused        # Find unused code
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+    # Ignore common defer patterns
+    exclude-functions:
+      - (io.Closer).Close
+      - (*os.File).Close
+      - (*database/sql.DB).Close
+
+  govet:
+    enable-all: false
+    enable:
+      - atomic
+      - bools
+      - errorsas
+      - nilfunc
+      - printf
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/GezzyDax/timelith,github.com/GezzyDax/Timelith
+
+  misspell:
+    locale: US
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: exported
+        disabled: true  # Disable for now
+
+  gosec:
+    excludes:
+      - G104 # Audit errors not checked (covered by errcheck)
+      - G307 # Deferring unsafe method (false positives)
+      - G114 # Use of net/http serve function
+      - G601 # Implicit memory aliasing (we handle this manually)
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - govet
+
+    # Exclude defer Close errors (common pattern)
+    - text: "Error return value of.*Close.*is not checked"
+      linters:
+        - errcheck
+
+    # Exclude logger sync errors
+    - text: "Error return value of.*Sync.*is not checked"
+      linters:
+        - errcheck
+
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  new: false
+
+output:
+  sort-results: true
