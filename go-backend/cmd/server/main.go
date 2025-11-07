@@ -12,11 +12,45 @@ import (
 	"github.com/GezzyDax/timelith/go-backend/internal/database"
 	"github.com/GezzyDax/timelith/go-backend/internal/logger"
 	"github.com/GezzyDax/timelith/go-backend/internal/scheduler"
+	"github.com/GezzyDax/timelith/go-backend/internal/setup"
 	"github.com/GezzyDax/timelith/go-backend/internal/telegram"
 	"go.uber.org/zap"
 )
 
 func main() {
+	// Check if setup is needed
+	if setup.CheckIfSetupNeeded() {
+		fmt.Println("========================================")
+		fmt.Println("  Setup Required")
+		fmt.Println("========================================")
+		fmt.Println()
+		fmt.Println("Configuration not found. Starting in setup mode...")
+		fmt.Println("Please open your browser and navigate to:")
+		fmt.Println()
+		fmt.Println("  http://localhost:8080")
+		fmt.Println()
+		fmt.Println("The web-based setup wizard will guide you through")
+		fmt.Println("the initial configuration process.")
+		fmt.Println()
+		fmt.Println("After completing setup, please restart the server.")
+		fmt.Println("========================================")
+
+		// Setup minimal server for setup wizard
+		app := api.SetupSetupRouter()
+
+		// Start setup server
+		addr := ":8080"
+		fmt.Printf("\nSetup server listening on %s\n\n", addr)
+
+		if err := app.Listen(addr); err != nil {
+			fmt.Printf("Failed to start setup server: %v\n", err)
+			os.Exit(1)
+		}
+
+		// After setup is complete via web UI, user should restart
+		return
+	}
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {

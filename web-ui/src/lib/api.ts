@@ -170,6 +170,25 @@ class ApiClient {
     const response = await this.client.get<JobLog[]>('/logs')
     return response.data
   }
+
+  // Setup
+  async checkSetupStatus(): Promise<{ setup_required: boolean }> {
+    const response = await this.client.get<{ setup_required: boolean }>('/setup/status')
+    return response.data
+  }
+
+  async performSetup(data: {
+    telegram_app_id: string
+    telegram_app_hash: string
+    server_port: string
+    postgres_password: string
+    admin_username: string
+    admin_password: string
+    environment: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/setup', data)
+    return response.data
+  }
 }
 
 export const api = new ApiClient()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Navbar } from '@/components/layout/Navbar'
@@ -9,33 +9,63 @@ import { api } from '@/lib/api'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
 
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/login')
-    }
-  }, [router])
-
+  // All hooks must be called before any conditional returns
   const { data: accounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => api.getAccounts(),
+    enabled: !checking, // Only run when not checking
   })
 
   const { data: templates } = useQuery({
     queryKey: ['templates'],
     queryFn: () => api.getTemplates(),
+    enabled: !checking,
   })
 
   const { data: schedules } = useQuery({
     queryKey: ['schedules'],
     queryFn: () => api.getSchedules(),
+    enabled: !checking,
   })
 
   const { data: logs } = useQuery({
     queryKey: ['logs'],
     queryFn: () => api.getAllLogs(),
+    enabled: !checking,
   })
+
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const status = await api.checkSetupStatus()
+        if (status.setup_required) {
+          router.push('/setup')
+          return
+        }
+      } catch (err) {
+        // If setup check fails, might be in setup mode or API is down
+        console.error('Setup check failed:', err)
+      }
+
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.push('/login')
+      }
+      setChecking(false)
+    }
+
+    checkSetup()
+  }, [router])
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
+  }
 
   const stats = [
     { name: 'Total Accounts', value: accounts?.length || 0, href: '/accounts' },
