@@ -246,14 +246,14 @@ export default function SetupPage() {
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Password for PostgreSQL database user 'timelith'
+                    Password for PostgreSQL database user &quot;timelith&quot;
                   </p>
                 </div>
 
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <p className="text-sm text-yellow-800">
                     <strong>Note:</strong> Make sure PostgreSQL is running and accessible.
-                    The database 'timelith' with user 'timelith' should be created before setup.
+                    The database &quot;timelith&quot; with user &quot;timelith&quot; should be created before setup.
                   </p>
                 </div>
               </div>

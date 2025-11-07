@@ -1,8 +1,6 @@
 module github.com/GezzyDax/timelith/go-backend
 
-go 1.24.0
-
-toolchain go1.24.7
+go 1.23
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.0
