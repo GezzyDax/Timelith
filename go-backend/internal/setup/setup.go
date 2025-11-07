@@ -17,15 +17,15 @@ import (
 )
 
 type SetupConfig struct {
-	TelegramAppID   string
-	TelegramAppHash string
-	ServerPort      string
+	TelegramAppID    string
+	TelegramAppHash  string
+	ServerPort       string
 	PostgresPassword string
-	JWTSecret       string
-	EncryptionKey   string
-	AdminUsername   string
-	AdminPassword   string
-	Environment     string
+	JWTSecret        string
+	EncryptionKey    string
+	AdminUsername    string
+	AdminPassword    string
+	Environment      string
 }
 
 // CheckIfSetupNeeded проверяет, нужна ли установка
@@ -42,9 +42,11 @@ func RunSetup() (*SetupConfig, error) {
 	reader := bufio.NewReader(os.Stdin)
 	config := &SetupConfig{}
 
-	fmt.Println("\n========================================")
+	fmt.Println()
+	fmt.Println("========================================")
 	fmt.Println("  Установка Timelith")
-	fmt.Println("========================================\n")
+	fmt.Println("========================================")
+	fmt.Println()
 
 	// Telegram API credentials
 	fmt.Println("1. Настройки Telegram API")
@@ -235,9 +237,11 @@ func ValidateConfig(config *SetupConfig) error {
 
 // ShowSummary показывает итоговую информацию после установки
 func ShowSummary(config *SetupConfig) {
-	fmt.Println("\n========================================")
+	fmt.Println()
+	fmt.Println("========================================")
 	fmt.Println("  Установка завершена!")
-	fmt.Println("========================================\n")
+	fmt.Println("========================================")
+	fmt.Println()
 	fmt.Printf("Сервер запущен на порту: %s\n", config.ServerPort)
 	fmt.Printf("Администратор: %s\n", config.AdminUsername)
 	fmt.Println("\nДля входа в систему используйте созданные учетные данные.")
