@@ -5,10 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/GezzyDax/timelith/go-backend/internal/auth"
 	"github.com/GezzyDax/timelith/go-backend/internal/database"
@@ -29,12 +31,20 @@ type SetupConfig struct {
 }
 
 // CheckIfSetupNeeded проверяет, нужна ли установка
-func CheckIfSetupNeeded() bool {
-	// Проверяем наличие .env файла
-	if _, err := os.Stat(".env"); err == nil {
-		return false
+// Теперь проверяет наличие пользователей в БД, а не файл .env
+func CheckIfSetupNeeded(db interface{ CountUsers() (int, error) }) bool {
+	if db == nil {
+		return true
 	}
-	return true
+
+	count, err := db.CountUsers()
+	if err != nil {
+		// Если БД недоступна или таблицы нет, setup нужен
+		return true
+	}
+
+	// Если нет пользователей, setup нужен
+	return count == 0
 }
 
 // RunSetup запускает интерактивную установку
@@ -99,9 +109,16 @@ func RunSetup() (*SetupConfig, error) {
 
 // SaveConfig сохраняет конфигурацию в .env файл
 func SaveConfig(config *SetupConfig) error {
+	// Determine PostgreSQL host based on environment
+	pgHost := os.Getenv("POSTGRES_HOST")
+	if pgHost == "" {
+		pgHost = "postgres" // Default to Docker service name
+	}
+
 	databaseURL := fmt.Sprintf(
-		"postgres://timelith:%s@localhost:5432/timelith?sslmode=disable",
+		"postgres://timelith:%s@%s:5432/timelith?sslmode=disable",
 		config.PostgresPassword,
+		pgHost,
 	)
 
 	envContent := fmt.Sprintf(`# Database
@@ -134,12 +151,53 @@ NEXT_PUBLIC_API_URL=http://localhost:%s
 		config.ServerPort,
 	)
 
+	// Создаем backup существующего .env файла, если он есть
+	if err := backupEnvFile(); err != nil {
+		// Предупреждение, но не критическая ошибка
+		fmt.Printf("⚠ Warning: Failed to backup .env file: %v\n", err)
+	}
+
 	err := os.WriteFile(".env", []byte(envContent), 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write .env file: %w", err)
 	}
 
 	fmt.Println("✓ Конфигурация сохранена в .env")
+	return nil
+}
+
+// backupEnvFile создает резервную копию .env файла с timestamp
+func backupEnvFile() error {
+	// Проверяем, существует ли .env файл
+	if _, err := os.Stat(".env"); os.IsNotExist(err) {
+		// Файл не существует, backup не нужен
+		return nil
+	}
+
+	// Создаем имя файла с timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	backupPath := fmt.Sprintf(".env.backup_%s", timestamp)
+
+	// Открываем исходный файл
+	source, err := os.Open(".env")
+	if err != nil {
+		return fmt.Errorf("failed to open .env: %w", err)
+	}
+	defer source.Close()
+
+	// Создаем backup файл
+	backup, err := os.Create(backupPath)
+	if err != nil {
+		return fmt.Errorf("failed to create backup file: %w", err)
+	}
+	defer backup.Close()
+
+	// Копируем содержимое
+	if _, err := io.Copy(backup, source); err != nil {
+		return fmt.Errorf("failed to copy .env to backup: %w", err)
+	}
+
+	fmt.Printf("✓ Backup создан: %s\n", backupPath)
 	return nil
 }
 

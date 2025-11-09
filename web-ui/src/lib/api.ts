@@ -189,6 +189,89 @@ class ApiClient {
     const response = await this.client.post<{ success: boolean; message: string }>('/setup', data)
     return response.data
   }
+
+  // New 3-stage setup
+  async setupDatabase(data: {
+    use_docker_database: boolean
+    database_url?: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/setup/database', data)
+    return response.data
+  }
+
+  async setupAdmin(data: {
+    username: string
+    password: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/setup/admin', data)
+    return response.data
+  }
+
+  async setupComplete(data: {
+    telegram_app_id: string
+    telegram_app_hash: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/setup/complete', data)
+    return response.data
+  }
+
+  // Settings Management
+  async getAllSettings(): Promise<any[]> {
+    const response = await this.client.get<any[]>('/settings')
+    return response.data
+  }
+
+  async getSettingsByCategory(category: string): Promise<any[]> {
+    const response = await this.client.get<any[]>(`/settings/category/${category}`)
+    return response.data
+  }
+
+  async createSetting(data: {
+    key: string
+    value: string
+    encrypted: boolean
+    category: string
+    description?: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/settings', data)
+    return response.data
+  }
+
+  async updateSetting(key: string, value: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.put<{ success: boolean; message: string }>(`/settings/${key}`, { value })
+    return response.data
+  }
+
+  async deleteSetting(key: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete<{ success: boolean; message: string }>(`/settings/${key}`)
+    return response.data
+  }
+
+  // User Management
+  async getUsers(): Promise<User[]> {
+    const response = await this.client.get<User[]>('/users')
+    return response.data
+  }
+
+  async getUser(id: string): Promise<User> {
+    const response = await this.client.get<User>(`/users/${id}`)
+    return response.data
+  }
+
+  async createUser(data: { username: string; password: string }): Promise<User> {
+    const response = await this.client.post<User>('/users', data)
+    return response.data
+  }
+
+  async updateUser(id: string, data: { username?: string; password?: string }): Promise<User> {
+    const response = await this.client.put<User>(`/users/${id}`, data)
+    return response.data
+  }
+
+  async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete<{ success: boolean; message: string }>(`/users/${id}`)
+    return response.data
+  }
 }
 
 export const api = new ApiClient()

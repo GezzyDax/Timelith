@@ -56,7 +56,10 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	}
 
 	// Generate JWT
-	jwtSecret := c.Locals("jwt_secret").(string)
+	jwtSecret, ok := c.Locals("jwt_secret").(string)
+	if !ok || jwtSecret == "" {
+		return c.Status(500).JSON(fiber.Map{"error": "Server configuration error: JWT secret not available"})
+	}
 	token, err := auth.GenerateToken(user.ID.String(), user.Username, jwtSecret)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})

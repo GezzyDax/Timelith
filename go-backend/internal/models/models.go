@@ -74,3 +74,18 @@ type User struct {
 	CreatedAt    time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
 }
+
+// Setting represents a system configuration setting
+type Setting struct {
+	ID              uuid.UUID      `db:"id" json:"id"`
+	Key             string         `db:"key" json:"key"`
+	Value           string         `db:"value" json:"value"`
+	Encrypted       bool           `db:"encrypted" json:"encrypted"`
+	Category        string         `db:"category" json:"category"`
+	Description     sql.NullString `db:"description" json:"description,omitempty"`
+	Editable        bool           `db:"editable" json:"editable"`
+	RequiresRestart bool           `db:"requires_restart" json:"requires_restart"`
+	UpdatedAt       time.Time      `db:"updated_at" json:"updated_at"`
+	UpdatedBy       *uuid.UUID     `db:"updated_by" json:"updated_by,omitempty"`
+	CreatedAt       time.Time      `db:"created_at" json:"created_at"`
+}

@@ -11,6 +11,8 @@ import { api } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
 import { Plus, Trash2 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function AccountsPage() {
   const queryClient = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)

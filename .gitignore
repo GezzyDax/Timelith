@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.production
+.env.master
+.env.backup_*
 
 # Docker volumes
 /postgres-data
@@ -24,6 +26,13 @@ rails-app/config/credentials/*.key
 go-backend/tmp
 go-backend/*.log
 go-backend/go-backend
+go-backend/bin/
+
+# Next.js
+web-ui/.next/
+web-ui/out/
+web-ui/node_modules/
+web-ui/.env*.local
 
 # IDE
 .idea/
@@ -39,3 +48,5 @@ Thumbs.db
 # Logs
 *.log
 logs/
+.tsbuildinfo
+next-env.d.ts

@@ -87,6 +87,29 @@ func (db *DB) RunMigrations() error {
 			executed_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			created_at TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
+		`CREATE TABLE IF NOT EXISTS settings (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			key VARCHAR(255) UNIQUE NOT NULL,
+			value TEXT NOT NULL,
+			encrypted BOOLEAN DEFAULT false,
+			category VARCHAR(100) NOT NULL,
+			description TEXT,
+			editable BOOLEAN DEFAULT true,
+			requires_restart BOOLEAN DEFAULT false,
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category)`,
+		`CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)`,
+		`CREATE INDEX IF NOT EXISTS idx_settings_editable ON settings(editable)`,
+		`INSERT INTO settings (key, value, encrypted, category, description, editable, requires_restart)
+		 VALUES
+			('setup_completed', 'false', false, 'system', 'Setup wizard completion flag', false, false),
+			('server_port', '8080', false, 'system', 'HTTP server port', true, true),
+			('environment', 'production', false, 'system', 'Application environment', true, false),
+			('log_level', 'info', false, 'system', 'Logging level', true, false)
+		 ON CONFLICT (key) DO NOTHING`,
 		`CREATE INDEX IF NOT EXISTS idx_accounts_status ON accounts(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_schedules_status ON schedules(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_schedules_next_run ON schedules(next_run_at)`,

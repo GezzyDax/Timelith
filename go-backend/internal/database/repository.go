@@ -260,3 +260,119 @@ func (db *DB) GetUserByUsername(username string) (*models.User, error) {
 	}
 	return &user, nil
 }
+
+func (db *DB) CountUsers() (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users`
+	err := db.Get(&count, query)
+	return count, err
+}
+
+func (db *DB) ListUsers() ([]models.User, error) {
+	var users []models.User
+	query := `SELECT * FROM users ORDER BY created_at DESC`
+	err := db.Select(&users, query)
+	return users, err
+}
+
+func (db *DB) GetUserByID(id uuid.UUID) (*models.User, error) {
+	var user models.User
+	query := `SELECT * FROM users WHERE id = $1`
+	err := db.Get(&user, query, id)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("user not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *DB) UpdateUser(user *models.User) error {
+	query := `UPDATE users
+			  SET username = $1, password_hash = $2, updated_at = NOW()
+			  WHERE id = $3`
+
+	_, err := db.Exec(query, user.Username, user.PasswordHash, user.ID)
+	return err
+}
+
+func (db *DB) DeleteUser(id uuid.UUID) error {
+	query := `DELETE FROM users WHERE id = $1`
+	_, err := db.Exec(query, id)
+	return err
+}
+
+// Settings Repository
+
+func (db *DB) CreateSetting(setting *models.Setting) error {
+	query := `INSERT INTO settings (id, key, value, encrypted, category, description, editable, requires_restart, updated_by, created_at, updated_at)
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+			  RETURNING id, created_at, updated_at`
+
+	setting.ID = uuid.New()
+	return db.QueryRow(query, setting.ID, setting.Key, setting.Value, setting.Encrypted,
+		setting.Category, setting.Description, setting.Editable, setting.RequiresRestart, setting.UpdatedBy).
+		Scan(&setting.ID, &setting.CreatedAt, &setting.UpdatedAt)
+}
+
+func (db *DB) GetSettingByKey(key string) (*models.Setting, error) {
+	var setting models.Setting
+	query := `SELECT * FROM settings WHERE key = $1`
+	err := db.Get(&setting, query, key)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("setting not found: %s", key)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &setting, nil
+}
+
+func (db *DB) GetAllSettings() ([]models.Setting, error) {
+	var settings []models.Setting
+	query := `SELECT * FROM settings ORDER BY category, key`
+	err := db.Select(&settings, query)
+	return settings, err
+}
+
+func (db *DB) GetSettingsByCategory(category string) ([]models.Setting, error) {
+	var settings []models.Setting
+	query := `SELECT * FROM settings WHERE category = $1 ORDER BY key`
+	err := db.Select(&settings, query, category)
+	return settings, err
+}
+
+func (db *DB) UpsertSetting(key, value string, encrypted bool, category string, updatedBy *uuid.UUID) error {
+	query := `INSERT INTO settings (id, key, value, encrypted, category, updated_by, created_at, updated_at)
+			  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
+			  ON CONFLICT (key) DO UPDATE
+			  SET value = $2, encrypted = $3, category = $4, updated_by = $5, updated_at = NOW()`
+
+	_, err := db.Exec(query, key, value, encrypted, category, updatedBy)
+	return err
+}
+
+func (db *DB) UpdateSetting(setting *models.Setting) error {
+	query := `UPDATE settings
+			  SET value = $1, encrypted = $2, category = $3, description = $4,
+			      editable = $5, requires_restart = $6, updated_by = $7, updated_at = NOW()
+			  WHERE key = $8`
+
+	_, err := db.Exec(query, setting.Value, setting.Encrypted, setting.Category,
+		setting.Description, setting.Editable, setting.RequiresRestart, setting.UpdatedBy, setting.Key)
+	return err
+}
+
+func (db *DB) DeleteSetting(key string) error {
+	query := `DELETE FROM settings WHERE key = $1`
+	_, err := db.Exec(query, key)
+	return err
+}
+
+func (db *DB) CountSettings() (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM settings`
+	err := db.Get(&count, query)
+	return count, err
+}
