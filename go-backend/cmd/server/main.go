@@ -94,15 +94,15 @@ func main() {
 	defer settingsService.Stop()
 	logger.Log.Info("Settings service initialized")
 
-	// Check setup status from settings
-	setupRequired := !settingsService.IsSetupCompleted()
+	// Check setup status from settings - для информации в логах
+	setupCompleted := settingsService.IsSetupCompleted()
 
 	// Fallback: also check if users exist (for backward compatibility)
-	if !setupRequired {
-		setupRequired = setup.CheckIfSetupNeeded(db)
+	if !setupCompleted {
+		setupCompleted = !setup.CheckIfSetupNeeded(db)
 	}
 
-	if setupRequired {
+	if !setupCompleted {
 		logger.Log.Info("⚙️  Setup required - setup not completed")
 		fmt.Println()
 		fmt.Println("📋 Setup Required")
@@ -121,30 +121,31 @@ func main() {
 		logger.Log.Info("✅ Setup completed - application ready")
 	}
 
-	// Setup API router with settings service
-	app := api.SetupRouter(cfg, db, settingsService, setupRequired)
-
-	// Initialize other services only if setup is complete
-	var sched *scheduler.Scheduler
-	if !setupRequired {
-		// Initialize Telegram session manager
-		sessionManager, err := telegram.NewSessionManager(cfg)
+	var sessionManager *telegram.SessionManager
+	if setupCompleted {
+		sessionManager, err = telegram.NewSessionManager(cfg)
 		if err != nil {
 			logger.Log.Warn("Failed to initialize session manager", zap.Error(err))
 		} else {
-			defer sessionManager.Close()
 			logger.Log.Info("Telegram session manager initialized")
+			defer sessionManager.Close()
+		}
+	}
 
-			// Initialize scheduler
-			sched = scheduler.NewScheduler(db, sessionManager)
-			ctx := context.Background()
+	// Setup API router with settings service
+	app := api.SetupRouter(cfg, db, settingsService, sessionManager)
 
-			if err := sched.Start(ctx); err != nil {
-				logger.Log.Error("Failed to start scheduler", zap.Error(err))
-			} else {
-				defer sched.Stop()
-				logger.Log.Info("Scheduler started")
-			}
+	// Initialize other services only if setup is complete and session manager is ready
+	var sched *scheduler.Scheduler
+	if sessionManager != nil {
+		sched = scheduler.NewScheduler(db, sessionManager)
+		ctx := context.Background()
+
+		if err := sched.Start(ctx); err != nil {
+			logger.Log.Error("Failed to start scheduler", zap.Error(err))
+		} else {
+			defer sched.Stop()
+			logger.Log.Info("Scheduler started")
 		}
 	}
 

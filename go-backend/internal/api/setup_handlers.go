@@ -328,6 +328,95 @@ func (h *SetupHandler) SetupComplete(c *fiber.Ctx) error {
 	})
 }
 
+// SetupAutomatic handles automatic all-in-one setup - just username and password needed
+func (h *SetupHandler) SetupAutomatic(c *fiber.Ctx) error {
+	if h.settingsService.IsSetupCompleted() {
+		return c.Status(403).JSON(fiber.Map{"error": "Setup already completed"})
+	}
+
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Validate input
+	if req.Username == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Username is required"})
+	}
+	if len(req.Username) < 3 {
+		return c.Status(400).JSON(fiber.Map{"error": "Username must be at least 3 characters long"})
+	}
+	if req.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Password is required"})
+	}
+	if len(req.Password) < 6 {
+		return c.Status(400).JSON(fiber.Map{"error": "Password must be at least 6 characters long"})
+	}
+
+	log.Println("Starting automatic setup...")
+
+	// Step 1: Auto-configure Docker database
+	password, err := setup.GenerateSecret(16)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate database password"})
+	}
+	databaseURL := fmt.Sprintf("postgres://timelith:%s@postgres:5432/timelith?sslmode=disable", password)
+
+	if err := h.settingsService.Set("postgres_password", password, true, "database", nil); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to save database password"})
+	}
+
+	if err := h.settingsService.Set("database_url", databaseURL, true, "database", nil); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to save database configuration"})
+	}
+
+	log.Println("✓ Database configured automatically")
+
+	// Step 2: Create admin user
+	passwordHash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
+	}
+
+	user := &models.User{
+		Username:     req.Username,
+		PasswordHash: passwordHash,
+	}
+
+	if err := h.db.CreateUser(user); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Failed to create admin user: %v", err)})
+	}
+
+	log.Printf("✓ Admin user '%s' created", req.Username)
+
+	// Step 3: Generate JWT secret
+	jwtSecret, err := setup.GenerateSecret(32)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate JWT secret"})
+	}
+	if err := h.settingsService.Set("jwt_secret", jwtSecret, true, "security", nil); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to save JWT secret"})
+	}
+
+	log.Println("✓ Security keys generated")
+
+	// Step 4: Mark setup as completed
+	if err := h.settingsService.MarkSetupCompleted(nil); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to mark setup as completed"})
+	}
+
+	log.Println("✓ Automatic setup completed successfully!")
+
+	return c.JSON(SetupResponse{
+		Success: true,
+		Message: "Setup completed automatically! You can now log in with your admin credentials.",
+	})
+}
+
 // ExportedGenerateSecret is an exported wrapper for setup.GenerateSecret
 func ExportedGenerateSecret(length int) (string, error) {
 	return setup.GenerateSecret(length)
