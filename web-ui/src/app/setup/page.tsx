@@ -18,10 +18,6 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Store data from each step
-  const [databaseData, setDatabaseData] = useState<{ useDockerDatabase: boolean; databaseUrl?: string } | null>(null)
-  const [adminData, setAdminData] = useState<{ username: string; password: string } | null>(null)
-
   const handleDatabaseNext = async (data: { useDockerDatabase: boolean; databaseUrl?: string }) => {
     setError('')
     setLoading(true)
@@ -32,7 +28,6 @@ export default function SetupPage() {
         database_url: data.databaseUrl,
       })
 
-      setDatabaseData(data)
       setCurrentStep('admin')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to configure database')
@@ -48,7 +43,6 @@ export default function SetupPage() {
     try {
       await api.setupAdmin(data)
 
-      setAdminData(data)
       setCurrentStep('apikeys')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create admin user')
