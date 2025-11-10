@@ -10,52 +10,37 @@ import (
 	"github.com/GezzyDax/timelith/go-backend/internal/api"
 	"github.com/GezzyDax/timelith/go-backend/internal/config"
 	"github.com/GezzyDax/timelith/go-backend/internal/database"
+	"github.com/GezzyDax/timelith/go-backend/internal/encryption"
 	"github.com/GezzyDax/timelith/go-backend/internal/logger"
 	"github.com/GezzyDax/timelith/go-backend/internal/scheduler"
+	"github.com/GezzyDax/timelith/go-backend/internal/settings"
 	"github.com/GezzyDax/timelith/go-backend/internal/setup"
 	"github.com/GezzyDax/timelith/go-backend/internal/telegram"
 	"go.uber.org/zap"
 )
 
 func main() {
-	// Check if setup is needed
-	if setup.CheckIfSetupNeeded() {
-		fmt.Println("========================================")
-		fmt.Println("  Setup Required")
-		fmt.Println("========================================")
-		fmt.Println()
-		fmt.Println("Configuration not found. Starting in setup mode...")
-		fmt.Println("Please open your browser and navigate to:")
-		fmt.Println()
-		fmt.Println("  http://localhost:8080")
-		fmt.Println()
-		fmt.Println("The web-based setup wizard will guide you through")
-		fmt.Println("the initial configuration process.")
-		fmt.Println()
-		fmt.Println("After completing setup, please restart the server.")
-		fmt.Println("========================================")
+	fmt.Println("========================================")
+	fmt.Println("  Starting Timelith")
+	fmt.Println("========================================")
+	fmt.Println()
 
-		// Setup minimal server for setup wizard
-		app := api.SetupSetupRouter()
-
-		// Start setup server
-		addr := ":8080"
-		fmt.Printf("\nSetup server listening on %s\n\n", addr)
-
-		if err := app.Listen(addr); err != nil {
-			fmt.Printf("Failed to start setup server: %v\n", err)
-			os.Exit(1)
-		}
-
-		// After setup is complete via web UI, user should restart
-		return
+	// Initialize encryption master key
+	fmt.Println("🔐 Initializing encryption...")
+	if err := encryption.InitMasterKey(); err != nil {
+		fmt.Printf("Failed to initialize encryption: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Printf("Failed to load config: %v\n", err)
-		os.Exit(1)
+		fmt.Printf("⚠️  Configuration not fully loaded: %v\n", err)
+		fmt.Println("📋 Running in setup mode...")
+		cfg = &config.Config{
+			ServerPort:  "8080",
+			Environment: "production",
+		}
 	}
 
 	// Initialize logger
@@ -65,12 +50,27 @@ func main() {
 	}
 	defer logger.Sync()
 
-	logger.Log.Info("Starting Timelith backend",
+	logger.Log.Info("Timelith backend starting",
 		zap.String("environment", cfg.Environment),
 		zap.String("port", cfg.ServerPort))
 
 	// Connect to database
-	db, err := database.Connect(cfg.DatabaseURL)
+	// Try to connect with provided config, or use defaults
+	databaseURL := cfg.DatabaseURL
+	if databaseURL == "" {
+		// Use default connection for setup
+		pgHost := os.Getenv("POSTGRES_HOST")
+		if pgHost == "" {
+			pgHost = "postgres"
+		}
+		pgPassword := os.Getenv("POSTGRES_PASSWORD")
+		if pgPassword == "" {
+			pgPassword = "timelith_password"
+		}
+		databaseURL = fmt.Sprintf("postgres://timelith:%s@%s:5432/timelith?sslmode=disable", pgPassword, pgHost)
+	}
+
+	db, err := database.Connect(databaseURL)
 	if err != nil {
 		logger.Log.Fatal("Failed to connect to database", zap.Error(err))
 	}
@@ -79,34 +79,75 @@ func main() {
 	logger.Log.Info("Connected to database")
 
 	// Run migrations
+	logger.Log.Info("Running database migrations...")
 	if err := db.RunMigrations(); err != nil {
 		logger.Log.Fatal("Failed to run migrations", zap.Error(err))
 	}
-
 	logger.Log.Info("Database migrations completed")
 
-	// Initialize Telegram session manager
-	sessionManager, err := telegram.NewSessionManager(cfg)
+	// Initialize Settings Service
+	logger.Log.Info("Initializing settings service...")
+	settingsService, err := settings.NewService(db)
 	if err != nil {
-		logger.Log.Fatal("Failed to initialize session manager", zap.Error(err))
+		logger.Log.Fatal("Failed to initialize settings service", zap.Error(err))
 	}
-	defer sessionManager.Close()
+	defer settingsService.Stop()
+	logger.Log.Info("Settings service initialized")
 
-	logger.Log.Info("Telegram session manager initialized")
+	// Check setup status from settings - для информации в логах
+	setupCompleted := settingsService.IsSetupCompleted()
 
-	// Initialize scheduler
-	sched := scheduler.NewScheduler(db, sessionManager)
-	ctx := context.Background()
-
-	if err := sched.Start(ctx); err != nil {
-		logger.Log.Fatal("Failed to start scheduler", zap.Error(err))
+	// Fallback: also check if users exist (for backward compatibility)
+	if !setupCompleted {
+		setupCompleted = !setup.CheckIfSetupNeeded(db)
 	}
-	defer sched.Stop()
 
-	logger.Log.Info("Scheduler started")
+	if !setupCompleted {
+		logger.Log.Info("⚙️  Setup required - setup not completed")
+		fmt.Println()
+		fmt.Println("📋 Setup Required")
+		fmt.Println("=" + "=====================================")
+		fmt.Println()
+		fmt.Println("Please open your browser and navigate to:")
+		fmt.Println()
+		fmt.Println("  http://localhost:3000/setup")
+		fmt.Println()
+		fmt.Println("The web-based setup wizard will guide you through")
+		fmt.Println("the initial configuration process.")
+		fmt.Println()
+		fmt.Println("Note: Make sure the web-ui service is running.")
+		fmt.Println()
+	} else {
+		logger.Log.Info("✅ Setup completed - application ready")
+	}
 
-	// Setup API router
-	app := api.SetupRouter(cfg, db)
+	var sessionManager *telegram.SessionManager
+	if setupCompleted {
+		sessionManager, err = telegram.NewSessionManager(cfg)
+		if err != nil {
+			logger.Log.Warn("Failed to initialize session manager", zap.Error(err))
+		} else {
+			logger.Log.Info("Telegram session manager initialized")
+			defer sessionManager.Close()
+		}
+	}
+
+	// Setup API router with settings service
+	app := api.SetupRouter(cfg, db, settingsService, sessionManager)
+
+	// Initialize other services only if setup is complete and session manager is ready
+	var sched *scheduler.Scheduler
+	if sessionManager != nil {
+		sched = scheduler.NewScheduler(db, sessionManager)
+		ctx := context.Background()
+
+		if err := sched.Start(ctx); err != nil {
+			logger.Log.Error("Failed to start scheduler", zap.Error(err))
+		} else {
+			defer sched.Stop()
+			logger.Log.Info("Scheduler started")
+		}
+	}
 
 	// Start server in goroutine
 	go func() {

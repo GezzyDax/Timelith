@@ -3,45 +3,52 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light Theme - Telegram Style */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --background: #ffffff;
+    --foreground: #000000;
+    --card: #f4f4f5;
+    --card-foreground: #000000;
+    --primary: #0088cc;
+    --primary-foreground: #ffffff;
+    --primary-hover: #0077b3;
+    --secondary: #f4f4f5;
+    --secondary-foreground: #000000;
+    --muted: #f4f4f5;
+    --muted-foreground: #71717a;
+    --accent: #e4e4e7;
+    --accent-foreground: #000000;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --success: #22c55e;
+    --success-foreground: #ffffff;
+    --border: #e4e4e7;
+    --input: #e4e4e7;
+    --ring: #0088cc;
   }
 
+  /* Dark Theme - Telegram Style */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: #212121;
+    --foreground: #ffffff;
+    --card: #0f0f0f;
+    --card-foreground: #ffffff;
+    --primary: #64b5f6;
+    --primary-foreground: #000000;
+    --primary-hover: #42a5f5;
+    --secondary: #2c2c2e;
+    --secondary-foreground: #ffffff;
+    --muted: #2c2c2e;
+    --muted-foreground: #a1a1aa;
+    --accent: #3f3f46;
+    --accent-foreground: #ffffff;
+    --destructive: #f87171;
+    --destructive-foreground: #000000;
+    --success: #4ade80;
+    --success-foreground: #000000;
+    --border: #2c2c2e;
+    --input: #2c2c2e;
+    --ring: #64b5f6;
   }
 }
 
@@ -49,7 +56,26 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  }
+}
+
+/* Flat Design - Remove all shadows and gradients */
+@layer utilities {
+  .no-shadow {
+    box-shadow: none !important;
+  }
+
+  .flat-button {
+    box-shadow: none;
+    background-image: none;
+  }
+
+  .flat-card {
+    box-shadow: none;
+    border: 1px solid var(--border);
   }
 }

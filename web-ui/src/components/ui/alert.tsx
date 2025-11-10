@@ -1,17 +1,20 @@
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 const Alert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { variant?: 'default' | 'destructive' }
+  React.HTMLAttributes<HTMLDivElement> & { variant?: 'default' | 'destructive' | 'success' }
 >(({ className = '', variant = 'default', ...props }, ref) => (
   <div
     ref={ref}
     role="alert"
-    className={`relative w-full rounded-lg border p-4 ${
-      variant === 'destructive'
-        ? 'border-red-200 bg-red-50 text-red-900'
-        : 'border-gray-200 bg-white'
-    } ${className}`}
+    className={cn(
+      'relative w-full rounded-lg border p-4 flat-card',
+      variant === 'destructive' && 'border-destructive bg-destructive/10 text-destructive-foreground',
+      variant === 'success' && 'border-success bg-success/10 text-success-foreground',
+      variant === 'default' && 'border-border bg-card text-card-foreground',
+      className
+    )}
     {...props}
   />
 ))
@@ -23,7 +26,7 @@ const AlertDescription = React.forwardRef<
 >(({ className = '', ...props }, ref) => (
   <div
     ref={ref}
-    className={`text-sm ${className}`}
+    className={cn('text-sm', className)}
     {...props}
   />
 ))

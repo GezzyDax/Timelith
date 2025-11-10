@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -20,6 +19,7 @@ type MessageJob struct {
 	Template   *models.Template
 	Channel    *models.Channel
 	Message    string
+	Delay      time.Duration
 	Retries    int
 }
 
@@ -69,6 +69,14 @@ func (d *Dispatcher) worker(ctx context.Context, workerID int) {
 }
 
 func (d *Dispatcher) processJob(ctx context.Context, job *MessageJob, workerID int) {
+	// Apply delay if specified
+	if job.Delay > 0 {
+		logger.Log.Info("Delaying message",
+			zap.Duration("delay", job.Delay),
+			zap.String("channel", job.Channel.Name))
+		time.Sleep(job.Delay)
+	}
+
 	logger.Log.Info("Processing message job",
 		zap.Int("worker_id", workerID),
 		zap.String("schedule_id", job.ScheduleID.String()),
@@ -84,8 +92,17 @@ func (d *Dispatcher) processJob(ctx context.Context, job *MessageJob, workerID i
 		return
 	}
 
-	// Send message
-	err := d.sessionManager.SendMessage(ctx, job.Account.Phone, job.Channel.ChatID, job.Message)
+	// Send message (text or media based on template)
+	var err error
+	if job.Template.MediaType.Valid && job.Template.MediaType.String != "" {
+		err = d.sessionManager.SendMediaMessage(ctx, job.Account.Phone, job.Channel.ChatID, job.Template)
+	} else if job.Template.CopyFromChatID.Valid && job.Template.CopyFromMessageID.Valid {
+		err = d.sessionManager.ForwardMessage(ctx, job.Account.Phone, job.Channel.ChatID,
+			job.Template.CopyFromChatID.String, int(job.Template.CopyFromMessageID.Int64))
+	} else {
+		err = d.sessionManager.SendMessage(ctx, job.Account.Phone, job.Channel.ChatID, job.Message)
+	}
+
 	if err != nil {
 		logger.Log.Error("Failed to send message",
 			zap.String("account", job.Account.Phone),
@@ -108,7 +125,13 @@ func (d *Dispatcher) processJob(ctx context.Context, job *MessageJob, workerID i
 		return
 	}
 
-	// Success
+	// Success - update account statistics
+	if err := d.db.IncrementAccountMessageCount(job.Account.ID); err != nil {
+		logger.Log.Error("Failed to update account stats",
+			zap.String("account_id", job.Account.ID.String()),
+			zap.Error(err))
+	}
+
 	logger.Log.Info("Message sent successfully",
 		zap.String("account", job.Account.Phone),
 		zap.String("channel", job.Channel.ChatID))
@@ -135,10 +158,10 @@ func (d *Dispatcher) logJobResult(scheduleID uuid.UUID, status, message, errorMs
 	}
 
 	if message != "" {
-		log.Message = sql.NullString{String: message, Valid: true}
+		log.Message = models.NewNullString(message)
 	}
 	if errorMsg != "" {
-		log.Error = sql.NullString{String: errorMsg, Valid: true}
+		log.Error = models.NewNullString(errorMsg)
 	}
 
 	if err := d.db.CreateJobLog(log); err != nil {

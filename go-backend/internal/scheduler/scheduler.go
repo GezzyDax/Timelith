@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -89,7 +88,7 @@ func (s *Scheduler) AddSchedule(schedule *models.Schedule) error {
 
 	// Update next run time
 	nextRun := cronSchedule.Next(time.Now().In(loc))
-	schedule.NextRunAt = sql.NullTime{Time: nextRun, Valid: true}
+	schedule.NextRunAt = models.NewNullTime(nextRun)
 	if err := s.db.UpdateSchedule(schedule); err != nil {
 		logger.Log.Error("Failed to update schedule next_run_at",
 			zap.String("schedule_id", schedule.ID.String()),
@@ -127,8 +126,16 @@ func (s *Scheduler) executeSchedule(scheduleID uuid.UUID) {
 		return
 	}
 
-	// Get account
-	account, err := s.db.GetAccount(schedule.AccountID)
+	// Check day filter
+	if !s.shouldRunToday(schedule) {
+		logger.Log.Info("Schedule skipped due to day filter",
+			zap.String("schedule_id", scheduleID.String()),
+			zap.String("day_filter", schedule.DayFilter.String))
+		return
+	}
+
+	// Get account (with load balancing if enabled)
+	account, err := s.getAccountForSchedule(schedule)
 	if err != nil {
 		logger.Log.Error("Failed to get account",
 			zap.String("account_id", schedule.AccountID.String()),
@@ -147,34 +154,105 @@ func (s *Scheduler) executeSchedule(scheduleID uuid.UUID) {
 		return
 	}
 
-	// Get channel
-	channel, err := s.db.GetChannel(schedule.ChannelID)
-	if err != nil {
-		logger.Log.Error("Failed to get channel",
-			zap.String("channel_id", schedule.ChannelID.String()),
-			zap.Error(err))
-		s.logJobExecution(scheduleID, "failed", "", fmt.Sprintf("Channel not found: %v", err))
+	// Get all channels for this schedule
+	var channelUUIDs []uuid.UUID
+	for _, cidStr := range schedule.ChannelIDs {
+		if cid, err := uuid.Parse(cidStr); err == nil {
+			channelUUIDs = append(channelUUIDs, cid)
+		}
+	}
+
+	if len(channelUUIDs) == 0 {
+		logger.Log.Error("No valid channels in schedule",
+			zap.String("schedule_id", scheduleID.String()))
+		s.logJobExecution(scheduleID, "failed", "", "No channels configured")
 		return
 	}
 
-	// Queue the message for sending
-	job := &MessageJob{
-		ScheduleID: scheduleID,
-		Account:    account,
-		Template:   template,
-		Channel:    channel,
-		Message:    template.Content, // TODO: Process variables
+	// Queue messages for each channel with delays
+	for i, channelID := range channelUUIDs {
+		channel, err := s.db.GetChannel(channelID)
+		if err != nil {
+			logger.Log.Error("Failed to get channel",
+				zap.String("channel_id", channelID.String()),
+				zap.Error(err))
+			continue
+		}
+
+		// Calculate delay for this message
+		delay := s.calculateDelay(schedule, i)
+
+		job := &MessageJob{
+			ScheduleID: scheduleID,
+			Account:    account,
+			Template:   template,
+			Channel:    channel,
+			Message:    template.Content, // TODO: Process variables
+			Delay:      delay,
+		}
+
+		s.dispatcher.Enqueue(job)
 	}
 
-	s.dispatcher.Enqueue(job)
-
 	// Update last run time
-	schedule.LastRunAt = sql.NullTime{Time: time.Now(), Valid: true}
+	schedule.LastRunAt = models.NewNullTime(time.Now())
 	if err := s.db.UpdateSchedule(schedule); err != nil {
 		logger.Log.Error("Failed to update schedule last_run_at",
 			zap.String("schedule_id", scheduleID.String()),
 			zap.Error(err))
 	}
+}
+
+func (s *Scheduler) shouldRunToday(schedule *models.Schedule) bool {
+	now := time.Now()
+	weekday := int(now.Weekday())
+
+	if !schedule.DayFilter.Valid || schedule.DayFilter.String == "all" {
+		return true
+	}
+
+	switch schedule.DayFilter.String {
+	case "weekdays":
+		return weekday >= 1 && weekday <= 5
+	case "weekends":
+		return weekday == 0 || weekday == 6
+	case "custom":
+		for _, day := range schedule.CustomDays {
+			if day == weekday {
+				return true
+			}
+		}
+		return false
+	}
+
+	return true
+}
+
+func (s *Scheduler) getAccountForSchedule(schedule *models.Schedule) (*models.Account, error) {
+	// If load balancing is not enabled, use the specified account
+	if !schedule.LoadBalance {
+		return s.db.GetAccount(schedule.AccountID)
+	}
+
+	// Get least used active account
+	return s.db.GetLeastUsedAccount()
+}
+
+func (s *Scheduler) calculateDelay(schedule *models.Schedule, index int) time.Duration {
+	if index == 0 || schedule.DelayMaxSeconds == 0 {
+		return 0
+	}
+
+	minDelay := schedule.DelayMinSeconds
+	maxDelay := schedule.DelayMaxSeconds
+
+	if minDelay >= maxDelay {
+		return time.Duration(minDelay) * time.Second
+	}
+
+	// Random delay between min and max
+	randomSeconds := minDelay + (maxDelay-minDelay)*index/10 // Simple distribution
+	return time.Duration(randomSeconds) * time.Second
 }
 
 func (s *Scheduler) logJobExecution(scheduleID uuid.UUID, status, message, errorMsg string) {
@@ -185,10 +263,10 @@ func (s *Scheduler) logJobExecution(scheduleID uuid.UUID, status, message, error
 	}
 
 	if message != "" {
-		log.Message = sql.NullString{String: message, Valid: true}
+		log.Message = models.NewNullString(message)
 	}
 	if errorMsg != "" {
-		log.Error = sql.NullString{String: errorMsg, Valid: true}
+		log.Error = models.NewNullString(errorMsg)
 	}
 
 	if err := s.db.CreateJobLog(log); err != nil {
