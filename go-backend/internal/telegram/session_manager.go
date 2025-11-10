@@ -69,19 +69,6 @@ func (sm *SessionManager) getEntry(phone string) (*clientEntry, error) {
 	return entry, nil
 }
 
-func (sm *SessionManager) dumpSession(entry *clientEntry) ([]byte, error) {
-	if entry == nil || entry.storage == nil {
-		return nil, fmt.Errorf("session storage not initialized")
-	}
-
-	data, err := entry.storage.Bytes(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dump session: %w", err)
-	}
-
-	return data, nil
-}
-
 func (sm *SessionManager) newClientWithSession(ctx context.Context, sessionBytes []byte) (*session.StorageMemory, *telegram.Client, error) {
 	storage := &session.StorageMemory{}
 	if len(sessionBytes) > 0 {
