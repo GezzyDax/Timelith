@@ -1,18 +1,27 @@
 package api
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/GezzyDax/timelith/go-backend/internal/models"
 	"github.com/GezzyDax/timelith/go-backend/internal/settings"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
 // SettingsHandler handles settings management endpoints
 type SettingsHandler struct {
 	settingsService *settings.Service
+}
+
+func userIDFromContext(c *fiber.Ctx) (uuid.UUID, error) {
+	userValue := c.Locals("user_id")
+	userStr, ok := userValue.(string)
+	if !ok || userStr == "" {
+		return uuid.Nil, fmt.Errorf("user context missing")
+	}
+	return uuid.Parse(userStr)
 }
 
 // NewSettingsHandler creates a new settings handler
@@ -78,12 +87,10 @@ func (h *SettingsHandler) UpdateSetting(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
-	// Get current user ID from JWT token
-	userToken := c.Locals("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
-	userID, err := uuid.Parse(claims["user_id"].(string))
+	// Get current user ID from context
+	userID, err := userIDFromContext(c)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid user ID"})
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user context"})
 	}
 
 	// Get current setting to check if it's editable and encrypted
@@ -187,12 +194,10 @@ func (h *SettingsHandler) CreateSetting(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Category is required"})
 	}
 
-	// Get current user ID from JWT token
-	userToken := c.Locals("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
-	userID, err := uuid.Parse(claims["user_id"].(string))
+	// Get current user ID from context
+	userID, err := userIDFromContext(c)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid user ID"})
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user context"})
 	}
 
 	// Create the setting

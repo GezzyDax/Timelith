@@ -5,12 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: string | undefined): string {
+export function formatDate(date: string | null | undefined): string {
   if (!date) return 'Never'
   return new Date(date).toLocaleString()
 }
 
-export function formatRelativeTime(date: string | undefined): string {
+export function formatRelativeTime(date: string | null | undefined): string {
   if (!date) return 'Never'
   const now = new Date()
   const then = new Date(date)

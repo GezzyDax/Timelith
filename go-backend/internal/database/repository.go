@@ -58,10 +58,76 @@ func (db *DB) UpdateAccount(account *models.Account) error {
 	return err
 }
 
+func (db *DB) UpdateAccountCodeState(accountID uuid.UUID, phoneCodeHash string, status string, sessionData []byte) error {
+	query := `UPDATE accounts
+			  SET phone_code_hash = $1,
+			      login_code_sent_at = NOW(),
+			      status = $2,
+			      two_factor_required = false,
+			      two_factor_hint = NULL,
+			      session_data = $3,
+			      updated_at = NOW()
+			  WHERE id = $4`
+	_, err := db.Exec(query, phoneCodeHash, status, sessionData, accountID)
+	return err
+}
+
+func (db *DB) MarkAccountPasswordRequired(accountID uuid.UUID, hint models.NullString, encryptedSession []byte) error {
+	sqlHint := hint.NullString
+	query := `UPDATE accounts
+			  SET status = 'password_required',
+			      two_factor_required = true,
+			      two_factor_hint = $1,
+			      phone_code_hash = NULL,
+			      session_data = $2,
+			      updated_at = NOW()
+			  WHERE id = $3`
+	_, err := db.Exec(query, sqlHint, encryptedSession, accountID)
+	return err
+}
+
+func (db *DB) SaveAccountSession(accountID uuid.UUID, sessionData []byte) error {
+	query := `UPDATE accounts
+			  SET session_data = $1,
+			      status = 'active',
+			      phone_code_hash = NULL,
+			      two_factor_required = false,
+			      two_factor_hint = NULL,
+			      error_message = NULL,
+			      last_login_at = NOW(),
+			      updated_at = NOW()
+			  WHERE id = $2`
+	_, err := db.Exec(query, sessionData, accountID)
+	return err
+}
+
 func (db *DB) DeleteAccount(id uuid.UUID) error {
 	query := `DELETE FROM accounts WHERE id = $1`
 	_, err := db.Exec(query, id)
 	return err
+}
+
+func (db *DB) IncrementAccountMessageCount(id uuid.UUID) error {
+	query := `UPDATE accounts
+			  SET messages_sent = messages_sent + 1,
+			      last_used_at = NOW(),
+			      updated_at = NOW()
+			  WHERE id = $1`
+	_, err := db.Exec(query, id)
+	return err
+}
+
+func (db *DB) GetLeastUsedAccount() (*models.Account, error) {
+	var account models.Account
+	query := `SELECT * FROM accounts
+			  WHERE status = 'active'
+			  ORDER BY messages_sent ASC, last_used_at ASC NULLS FIRST
+			  LIMIT 1`
+	err := db.Get(&account, query)
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
 }
 
 // Template Repository
@@ -155,15 +221,17 @@ func (db *DB) DeleteChannel(id uuid.UUID) error {
 // Schedule Repository
 
 func (db *DB) CreateSchedule(schedule *models.Schedule) error {
-	query := `INSERT INTO schedules (id, name, account_id, template_id, channel_id,
-				cron_expr, timezone, status, created_at, updated_at)
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+	query := `INSERT INTO schedules (id, name, account_id, template_id, channel_ids,
+				cron_expr, timezone, day_filter, custom_days, delay_min_seconds,
+				delay_max_seconds, load_balance, status, created_at, updated_at)
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
 			  RETURNING id, created_at, updated_at`
 
 	schedule.ID = uuid.New()
 	return db.QueryRow(query, schedule.ID, schedule.Name, schedule.AccountID,
-		schedule.TemplateID, schedule.ChannelID, schedule.CronExpr,
-		schedule.Timezone, schedule.Status).
+		schedule.TemplateID, schedule.ChannelIDs, schedule.CronExpr,
+		schedule.Timezone, schedule.DayFilter, schedule.CustomDays,
+		schedule.DelayMinSeconds, schedule.DelayMaxSeconds, schedule.LoadBalance, schedule.Status).
 		Scan(&schedule.ID, &schedule.CreatedAt, &schedule.UpdatedAt)
 }
 
@@ -193,11 +261,15 @@ func (db *DB) ListActiveSchedules() ([]models.Schedule, error) {
 
 func (db *DB) UpdateSchedule(schedule *models.Schedule) error {
 	query := `UPDATE schedules
-			  SET name = $1, cron_expr = $2, timezone = $3, status = $4,
-			      next_run_at = $5, last_run_at = $6, updated_at = NOW()
-			  WHERE id = $7`
+			  SET name = $1, channel_ids = $2, cron_expr = $3, timezone = $4,
+			      day_filter = $5, custom_days = $6, delay_min_seconds = $7,
+			      delay_max_seconds = $8, load_balance = $9, status = $10,
+			      next_run_at = $11, last_run_at = $12, updated_at = NOW()
+			  WHERE id = $13`
 
-	_, err := db.Exec(query, schedule.Name, schedule.CronExpr, schedule.Timezone,
+	_, err := db.Exec(query, schedule.Name, schedule.ChannelIDs, schedule.CronExpr,
+		schedule.Timezone, schedule.DayFilter, schedule.CustomDays,
+		schedule.DelayMinSeconds, schedule.DelayMaxSeconds, schedule.LoadBalance,
 		schedule.Status, schedule.NextRunAt, schedule.LastRunAt, schedule.ID)
 	return err
 }

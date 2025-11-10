@@ -115,6 +115,34 @@ func (db *DB) RunMigrations() error {
 		`CREATE INDEX IF NOT EXISTS idx_schedules_next_run ON schedules(next_run_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_job_logs_schedule ON job_logs(schedule_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_job_logs_executed_at ON job_logs(executed_at)`,
+		// Add new columns for media support in templates
+		`ALTER TABLE templates ADD COLUMN IF NOT EXISTS media_type VARCHAR(50)`,
+		`ALTER TABLE templates ADD COLUMN IF NOT EXISTS media_urls JSONB DEFAULT '[]'`,
+		`ALTER TABLE templates ADD COLUMN IF NOT EXISTS copy_from_chat_id VARCHAR(255)`,
+		`ALTER TABLE templates ADD COLUMN IF NOT EXISTS copy_from_message_id BIGINT`,
+		// Add new columns for flexible scheduling
+		`ALTER TABLE schedules DROP COLUMN IF EXISTS channel_id`, // Remove old single channel
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS channel_ids JSONB DEFAULT '[]'`,
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS day_filter VARCHAR(50) DEFAULT 'all'`,
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS custom_days JSONB DEFAULT '[]'`,
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS delay_min_seconds INTEGER DEFAULT 0`,
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS delay_max_seconds INTEGER DEFAULT 0`,
+		`ALTER TABLE schedules ADD COLUMN IF NOT EXISTS load_balance BOOLEAN DEFAULT false`,
+		// Add new columns for account proxy and statistics
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS proxy_enabled BOOLEAN DEFAULT false`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS proxy_host VARCHAR(255)`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS proxy_port INTEGER`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS proxy_username VARCHAR(255)`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS proxy_password TEXT`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS messages_sent INTEGER DEFAULT 0`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMP`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS phone_code_hash TEXT`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS login_code_sent_at TIMESTAMP`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS two_factor_required BOOLEAN DEFAULT false`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS two_factor_hint TEXT`,
+		// Add indexes for new columns
+		`CREATE INDEX IF NOT EXISTS idx_accounts_messages_sent ON accounts(messages_sent)`,
+		`CREATE INDEX IF NOT EXISTS idx_accounts_last_used ON accounts(last_used_at)`,
 	}
 
 	for _, migration := range migrations {

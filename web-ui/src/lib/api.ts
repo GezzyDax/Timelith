@@ -76,6 +76,22 @@ class ApiClient {
     return response.data
   }
 
+  async verifyAccountCode(
+    id: string,
+    code: string
+  ): Promise<{ account: Account; requires_password: boolean; password_hint?: string }> {
+    const response = await this.client.post<{ account: Account; requires_password: boolean; password_hint?: string }>(
+      `/accounts/${id}/verify-code`,
+      { code }
+    )
+    return response.data
+  }
+
+  async verifyAccountPassword(id: string, password: string): Promise<Account> {
+    const response = await this.client.post<{ account: Account }>(`/accounts/${id}/verify-password`, { password })
+    return response.data.account
+  }
+
   async deleteAccount(id: string): Promise<void> {
     await this.client.delete(`/accounts/${id}`)
   }
@@ -212,6 +228,15 @@ class ApiClient {
     telegram_app_hash: string
   }): Promise<{ success: boolean; message: string }> {
     const response = await this.client.post<{ success: boolean; message: string }>('/setup/complete', data)
+    return response.data
+  }
+
+  // Automatic setup - all in one
+  async setupAutomatic(data: {
+    username: string
+    password: string
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post<{ success: boolean; message: string }>('/setup/automatic', data)
     return response.data
   }
 
