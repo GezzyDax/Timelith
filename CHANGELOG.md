@@ -1,14 +1,12 @@
-# Release v0.2.0
+# Release v0.3.0
 
 ## Changes
 
-- Merge pull request #8 from GezzyDax/claude/setup-initial-admin-user-011CUteRfn1Cq65JtVTLnbsz
-- 🐛 fix: исправлены контрольные суммы в go.sum и pre-commit скрипт
-- 🐛 fix: remove merge conflict markers from go.sum
-- 🐛 fix: downgrade Go dependencies and fix React Hooks violations
-- Ensure Go 1.23 compatibility
-- Use router redirect after setup
-- 🐛 fix: resolve build issues - downgrade Go version and fix ESLint errors
-- ✨ feat: implement web-based setup wizard with Next.js UI
+- Merge pull request #9 from GezzyDax/feature/telegram-onboarding
+- 🐛 fix: clean setup wizard state
+- 🐛 fix: include scheduler setup updates
+- 🐛 fix: satisfy golangci-lint
+- ✨ feat: add multi-step Telegram onboarding flow
+- 🐛 fix: add @swc/helpers@0.5.17 to fix Docker build
 
-**Full Changelog**: https://github.com/GezzyDax/Timelith/compare/v0.1.2...v0.2.0
+**Full Changelog**: https://github.com/GezzyDax/Timelith/compare/v0.2.0...v0.3.0
